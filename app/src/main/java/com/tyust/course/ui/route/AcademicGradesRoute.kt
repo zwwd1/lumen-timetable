@@ -143,7 +143,7 @@ private fun AcademicGradesContent(school: SchoolConfig, account: String, provide
             if (saved != null && sessions.isCurrent(expectedSession)) {
                 report = saved; reportLoaded = true
                 val savedTerms = saved.grades.map { it.term }.filter(String::isNotBlank).distinct()
-                val copies = savedTerms.associateWith { saved.forSemester(it) }
+                val copies = savedTerms.associateWith { saved.selectSemester(it) }
                 termReports = termReports + copies
                 if (catalog == null) {
                     val current = com.tyust.course.scvtc.ScvtcRuntime.semester
@@ -188,7 +188,7 @@ private fun AcademicGradesContent(school: SchoolConfig, account: String, provide
                 if (school.id == "scvtc") {
                     val ids = (loaded.grades.map { it.term } + terms.map { it.id } + semester)
                         .filter { it.isNotBlank() }.distinct()
-                    termReports = ids.associateWith { loaded.forSemester(it) }
+                    termReports = ids.associateWith { loaded.selectSemester(it) }
                     val current = com.tyust.course.scvtc.ScvtcRuntime.semester
                     catalog = AcademicStudyCatalog((ids + current).distinct().sortedDescending().map { AcademicTerm(it) }, AcademicTerm(current))
                     error = ""; refreshTerm = null
@@ -221,7 +221,7 @@ private fun AcademicGradesContent(school: SchoolConfig, account: String, provide
         if (!cacheReady) return@LaunchedEffect
         if (school.id == "scvtc") {
             // The school returns all semesters in one paged report. Term selection is local.
-            if (reportLoaded && semester.isNotBlank()) termReports = termReports + (semester to report.forSemester(semester))
+            if (reportLoaded && semester.isNotBlank()) termReports = termReports + (semester to report.selectSemester(semester))
             loading = false
             return@LaunchedEffect
         }

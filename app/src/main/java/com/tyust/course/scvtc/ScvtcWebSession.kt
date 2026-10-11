@@ -70,6 +70,7 @@ object ScvtcWebSession {
    }
   }
   if(early)WebViewCompat.addDocumentStartJavaScript(view,captureScript,setOf(School.ORIGIN))
+  var callbackHomeRetried=false
   view.webViewClient=object:WebViewClient(){
    override fun onPageStarted(v:WebView,url:String?,icon:android.graphics.Bitmap?){
     capture?.resetDocument()
@@ -104,7 +105,11 @@ object ScvtcWebSession {
     if(r.isForMainFrame){login.failedNetwork(ScvtcRuntime.account);page.value=page.value.copy(loading=false,error="官方页面连接失败（${e.errorCode}）；可刷新或用系统浏览器打开")}
    }
    override fun onReceivedHttpError(v:WebView,r:WebResourceRequest,response:WebResourceResponse){
-    if(r.isForMainFrame&&response.statusCode>=400)page.value=page.value.copy(loading=false,error="官方页面返回 HTTP ${response.statusCode}")
+    if(r.isForMainFrame&&response.statusCode>=400){
+     if(r.url.host=="jwxt.scvtc.edu.cn"&&r.url.path=="/api/cas/login"&&!callbackHomeRetried){
+      callbackHomeRetried=true;v.loadUrl(School.HOME)
+     }else page.value=page.value.copy(loading=false,error="官方页面返回 HTTP "+response.statusCode+"；可刷新或重新认证")
+    }
    }
   }
   view.webChromeClient=object:WebChromeClient(){
@@ -189,20 +194,24 @@ class ScvtcCapture(private val web:WebView){
   web.loadUrl(cn.scvtc.campus.CasAuthManager.JWXT_SSO_ENTRY)
  }
  private suspend fun startVerifiedSync(){
-  val calendar=officialMonday?:return
   if(verifiedAccount.isBlank()||generation.isBlank()||startedGeneration==generation)return
   require(authenticationAccount.isBlank()||authenticationAccount==verifiedAccount){"请使用本次输入的学校账号完成认证"}
   require(ScvtcRuntime.account.isBlank()||ScvtcRuntime.account==verifiedAccount||authenticationAccount==verifiedAccount){"官方账号与当前缓存账号不同，请确认学校账号"}
   val memory=loginMemory?:return
-  val api=cn.scvtc.campus.JwxtApi(headers={memory.apiHeaders(verifiedAccount,it)})
-  val student=api.student(verifiedAccount)
-  require(api.calendar().first.semester==calendar.semester){"学校学期已改变，请重新连接"}
-  ScvtcRuntime.confirm(verifiedAccount,calendar.semester)
-  ScvtcRuntime.registerVerifiedIdentity(verifiedAccount,calendar.semester,
-      listOf("studentName","name","xm","姓名").firstNotNullOfOrNull{student.fields[it]?.takeIf(String::isNotBlank)}.orEmpty().ifBlank{detectedName})
-  loginMemory?.confirmed(verifiedAccount,promoteEnrollment=true)
-  start(resetAuthentication=false)
-  authenticationVerified.value=true
+  val expected=verifiedAccount;val epoch=generation;val document=documentId
+  startedGeneration=epoch
+  try{
+   val api=cn.scvtc.campus.JwxtApi(headers={memory.apiHeaders(expected,it)})
+   val student=api.student(expected)
+   if(epoch!=generation||document!=documentId||verifiedAccount!=expected)return
+   ScvtcRuntime.acceptVerifiedIdentity(student)
+   memory.confirmed(expected,promoteEnrollment=true)
+   authenticationVerified.value=true
+   // The identity result returns to the caller now; calendar/data failures
+   // belong to background sync and cannot turn a valid login into a failure.
+   ScvtcRuntime.startNativeSync()
+  }catch(e:CancellationException){throw e}
+  catch(e:Exception){if(epoch==generation)startedGeneration="";throw e}
  }
  private suspend fun consume(m:JSONObject){
   val page=m.optString("page")

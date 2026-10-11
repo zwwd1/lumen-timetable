@@ -1,12 +1,15 @@
 (() => {
   if (window.__officialLoginMemory || window !== top || location.protocol !== 'https:') return;
+  let background = false;
   const visible = e => {
     const rect = e.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return false;
+    // An application-owned, unattached WebView has no drawn viewport. Only the
+    // exact school adapter may opt in; CSS-hidden alternative forms stay excluded.
+    if (!background && (rect.width <= 0 || rect.height <= 0)) return false;
     for (let node = e; node instanceof Element; node = node.parentElement) {
       const style = getComputedStyle(node);
       if (style.display === 'none' || ['hidden','collapse'].includes(style.visibility) ||
-          Number(style.opacity) === 0) return false;
+          (!background && Number(style.opacity) === 0)) return false;
     }
     return true;
   };
@@ -84,6 +87,17 @@
     }
   };
   window.__officialLoginMemory = { describe:() => identify(true)?.binding || null,
+    setBackgroundMode:() => { background = casPage && allowedService(); },
+    state:() => {
+      if (!casPage) return 'outside';
+      if (humanChallenge() || [...document.querySelectorAll('input')].some(e => visible(e) && challenge(e))) return 'challenge';
+      const errors = [...document.querySelectorAll('.ivu-message-error')].filter(visible);
+      if (errors.some(e => /(?:账号|帐号|账户|密码|用户名).*(?:错误|不正确|不存在|锁定|禁用|停用)/.test(e.textContent || ''))) return 'rejected';
+      if (errors.length) return 'unavailable';
+      if ([...document.querySelectorAll('.ivu-modal')].some(visible) ||
+          !['','#','#/'].includes(location.hash)) return 'notice';
+      return identify(true) ? 'form' : 'loading';
+    },
     challengeRequired:() => humanChallenge() || [...document.querySelectorAll('input')].some(e => visible(e) && challenge(e)),
     matches:binding => !!matches(identify(),binding), matchesForInput:binding=>!!matches(identify(true),binding),
     configure(binding,username,password,submit=true){

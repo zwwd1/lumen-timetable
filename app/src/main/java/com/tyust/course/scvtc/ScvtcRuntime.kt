@@ -76,15 +76,10 @@ object ScvtcRuntime {
      val memory=cn.scvtc.campus.OfficialLoginMemory(context)
      memory.rememberInput(a,password)
      val api=cn.scvtc.campus.JwxtApi(headers={memory.apiHeaders(a,it)})
-     val verified=cn.scvtc.campus.CasAuthManager(context,api).signIn(a,password) { student ->
-      val calendar=api.calendar().first
-      withContext(Dispatchers.Main) {
-       confirm(student.account,calendar.semester)
-       registerVerifiedIdentity(student.account,calendar.semester,
-        listOf("studentName","name","xm","姓名").firstNotNullOfOrNull{student.fields[it]?.takeIf(String::isNotBlank)}.orEmpty())
-       revision.value++
-      }
+     val verified=cn.scvtc.campus.CasAuthManager(context,api).signIn(a,password) { message ->
+      loginState.value=cn.scvtc.campus.NativeLoginState(a,busy=true,message=message)
      }
+     acceptVerifiedIdentity(verified)
      verified
     }
     loginState.value=cn.scvtc.campus.NativeLoginState(a,verified=true,message="学校身份已核验，正在后台读取课表与其他数据")
@@ -93,10 +88,12 @@ object ScvtcRuntime {
     loginState.value=cn.scvtc.campus.NativeLoginState(a,message="已停止本次登录，原数据保留");throw e
    } catch(e:Exception) {
     val stage=(e as? cn.scvtc.campus.JwxtAuthenticationRequired)?.stage
-    val extra=stage in setOf(cn.scvtc.campus.AuthenticationStage.CHALLENGE,cn.scvtc.campus.AuthenticationStage.SESSION)
+    val extra=stage in setOf(cn.scvtc.campus.AuthenticationStage.CHALLENGE,cn.scvtc.campus.AuthenticationStage.NOTICE,cn.scvtc.campus.AuthenticationStage.FORM,cn.scvtc.campus.AuthenticationStage.CALLBACK,cn.scvtc.campus.AuthenticationStage.SESSION)
     loginState.value=cn.scvtc.campus.NativeLoginState(a,requiresVerification=extra,
      message=when(stage) {
       cn.scvtc.campus.AuthenticationStage.CHALLENGE->"学校显示了验证码或二次认证，请在学校认证页完成；已填信息保留"
+      cn.scvtc.campus.AuthenticationStage.NOTICE->"学校有账号安全提示，请在官方页面确认后继续"
+      cn.scvtc.campus.AuthenticationStage.REJECTED->"学校未接受账号或密码，请检查输入后重试"
       cn.scvtc.campus.AuthenticationStage.FORM->"学校登录表单未准备好，请重试；也可打开学校认证页继续"
       cn.scvtc.campus.AuthenticationStage.CALLBACK->"学校认证回调等待超时，请重试；原数据保留"
       cn.scvtc.campus.AuthenticationStage.SESSION->"学校会话尚未建立，可补充认证；原数据保留"
@@ -112,12 +109,36 @@ object ScvtcRuntime {
   }
   job.start();job
  }
+ suspend fun cancelSignIn(){
+  val tasks=synchronized(jobLock){listOfNotNull(loginJob,firstSync)+serviceJobs.values.toList()}
+  tasks.forEach{it.cancel()};tasks.forEach{it.join()}
+ }
+ /** Identity is durable even when the school calendar is temporarily unavailable. */
+ internal suspend fun acceptVerifiedIdentity(student:cn.scvtc.campus.JwxtStudent)=withContext(Dispatchers.Main){
+  val a=student.account
+  val t=if(a==account)semester else prefs.getString("term:$a","").orEmpty()
+  prefs.edit().putString("account",a).putString("semester",t).apply()
+  registerVerifiedIdentity(a,t,listOf("studentName","name","xm","姓名")
+   .firstNotNullOfOrNull{student.fields[it]?.takeIf(String::isNotBlank)}.orEmpty())
+  revision.value++
+ }
  fun startNativeSync(mode:String="range"){
   synchronized(jobLock){
    if(taskRunning.value||syncState.value.busy)return
    val a=account;val t=semester
    val job=applicationJobs.launch(start=CoroutineStart.LAZY){
-    try{check(a==account&&t==semester);synchronize(mode)}
+    try{
+     check(a.isNotBlank()&&a==account&&t==semester)
+     if(t.isBlank()){
+      status.value="学校身份已核验，正在读取学期…"
+      networkMutex.withLock {
+       val memory=cn.scvtc.campus.OfficialLoginMemory(context)
+       val calendar=cn.scvtc.campus.JwxtApi(headers={memory.apiHeaders(a,it)}).calendar().first
+       withContext(Dispatchers.Main){check(a==account&&semester.isBlank());confirm(a,calendar.semester);revision.value++}
+      }
+     }
+     check(a==account);synchronize(mode)
+    }
     catch(e:CancellationException){throw e}
     catch(e:Exception){status.value="同步未完成；已有数据保留"}
    }

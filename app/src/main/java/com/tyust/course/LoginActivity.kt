@@ -41,6 +41,7 @@ import java.io.IOException
 class LoginActivity : ComponentActivity() {
     private var waitingForNativeLogin = false
     private var nativeLoginAccount = ""
+    private var openingSchoolAuthentication = false
     private fun completeSchoolLogin() {
         androidx.lifecycle.ViewModelProvider(this)[com.tyust.course.ui.screen.LoginFormState::class.java].password = ""
         if(intent.getBooleanExtra(EXTRA_RETURN_TO_CALLER,false)) setResult(RESULT_OK)
@@ -171,7 +172,10 @@ class LoginActivity : ComponentActivity() {
         nativeLoginAccount = savedInstanceState?.getString("native_login_account").orEmpty()
         lifecycleScope.launch {
             com.tyust.course.scvtc.ScvtcRuntime.loginState.collect { state ->
-                if(waitingForNativeLogin && state.account==nativeLoginAccount) {
+                if(waitingForNativeLogin && state.account.isBlank() && !state.busy) {
+                    waitingForNativeLogin=false; isLoading=false
+                    errorMessage="上次学校认证被中断，请重试"
+                } else if(waitingForNativeLogin && state.account==nativeLoginAccount) {
                     isLoading=state.busy
                     errorMessage=if(state.busy || state.verified) null else state.message.ifBlank { null }
                     if(state.verified) { waitingForNativeLogin=false; completeSchoolLogin() }
@@ -250,9 +254,14 @@ class LoginActivity : ComponentActivity() {
                         openWebView()
                     },
                     onSchoolAuthentication = { account ->
-                        nativeLoginAccount = account
-                        manualLoginInteraction = true
-                        openWebView()
+                        openSchoolAuthentication(account)
+                    },
+                    onSchoolLoginCancel = {
+                        waitingForNativeLogin = false
+                        lifecycleScope.launch {
+                            com.tyust.course.scvtc.ScvtcRuntime.cancelSignIn()
+                            isLoading = false; errorMessage = "已取消本次登录，已填内容保留"
+                        }
                     },
                     onSchoolAdded = {
                         // Refresh schools list after adding
@@ -350,13 +359,28 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
+    private fun openSchoolAuthentication(account: String) {
+        if (openingSchoolAuthentication) return
+        openingSchoolAuthentication = true
+        waitingForNativeLogin = false
+        manualLoginInteraction = true
+        nativeLoginAccount = account.takeIf { it.matches(Regex("[0-9]{6,20}")) }.orEmpty()
+        lifecycleScope.launch {
+            try {
+                com.tyust.course.scvtc.ScvtcRuntime.cancelSignIn()
+                isLoading = false; errorMessage = null
+                openWebView()
+            } finally { openingSchoolAuthentication = false }
+        }
+    }
+
     private fun openWebView() {
         val currentSchool = selectedLoginSchool
         if(currentSchool?.id=="scvtc") {
             schoolAuthenticationLauncher.launch(Intent(this,com.tyust.course.scvtc.ScvtcWebActivity::class.java)
                 .putExtra("url",cn.scvtc.campus.CasAuthManager.JWXT_SSO_ENTRY)
                 .putExtra("verification_only",true)
-                .putExtra("expected_account",nativeLoginAccount.ifBlank { com.tyust.course.scvtc.ScvtcRuntime.account }))
+                .putExtra("expected_account",nativeLoginAccount))
             return
         }
         if (currentSchool != null && AcademicGatewayFactory.supports(currentSchool)) {
@@ -654,6 +678,7 @@ class LoginActivity : ComponentActivity() {
 
     private fun handlePasswordLogin(username: String, password: String) {
         if(selectedLoginSchool?.id=="scvtc"){
+            if(isLoading || com.tyust.course.scvtc.ScvtcRuntime.loginState.value.busy || openingSchoolAuthentication)return
             nativeLoginAccount=username.trim()
             if(!nativeLoginAccount.matches(Regex("[0-9]{6,20}")) || password.isEmpty()) {
                 errorMessage="请输入学号和密码";return

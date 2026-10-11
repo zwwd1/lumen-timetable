@@ -103,7 +103,7 @@ class OfficialLoginMemory(private val context:Context) {
         if(value.optString("LYSESSIONID").isNotBlank())runCatching{prefs.edit().putString("session:$account",seal(account,value.toString())).commit()}
         android.webkit.CookieManager.getInstance().flush()
     }
-    fun install(web:WebView,expectedAccount:()->String={""}) {
+    fun install(web:WebView,onIdentity:(String)->Unit={},expectedAccount:()->String={""}) {
         if(!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER))return
         WebViewCompat.addWebMessageListener(web,"OfficialLoginBridge",origins){_,message,origin,main,_->
             if(main && origin.toString().trimEnd('/') in origins)runCatching {
@@ -132,6 +132,7 @@ class OfficialLoginMemory(private val context:Context) {
                 }
                 if(verified.isNotBlank()&&(expectedAccount().isBlank()||expectedAccount()==verified)){
                     staged.forEach{(path,headers)->rememberHeaders(verified,path,headers)};staged.clear()
+                    if(url==JwxtApi.IDENTITY)onIdentity(verified)
                 }
             }
         }
@@ -160,8 +161,8 @@ class OfficialLoginMemory(private val context:Context) {
             web.evaluateJavascript(context.assets.open("jwxt-auth-session.js").bufferedReader().use{it.readText()},null)
     }
     /** Explicit native input is staged, and saved only after the real identity response. */
-    fun configure(web:WebView,account:String,password:String,onResult:(Boolean)->Unit) {
-        awaitForm(web) { ready ->
+    fun configure(web:WebView,account:String,password:String,background:Boolean=false,onResult:(Boolean)->Unit) {
+        awaitForm(web,background) { ready ->
             if(ready) configureReady(web,account,password,onResult) else onResult(false)
         }
     }
@@ -188,22 +189,23 @@ class OfficialLoginMemory(private val context:Context) {
         }
     }
     /** A transport failure is not a rejected password; allow a later bounded attempt. */
-    fun failedNetwork(account:String){recoveringPage="";usedH5Entry=false;prefs.edit().remove("pending:$account").apply()}
+    fun failedNetwork(account:String){recoveringPage="";usedH5Entry=false;lastAttempt=0L;prefs.edit().remove("pending:$account").remove("attempt:$account").apply()}
     /** The official click handler performs its own CAS encryption; no guessed password protocol. */
-    fun recover(web:WebView,account:String,onResult:(Boolean)->Unit) {
-        awaitForm(web) { ready ->
+    fun recover(web:WebView,account:String,background:Boolean=false,onResult:(Boolean)->Unit) {
+        awaitForm(web,background) { ready ->
             if(ready) recoverBoundForm(web,account,onResult) else onResult(false)
         }
     }
-    private fun awaitForm(web:WebView,onResult:(Boolean)->Unit) {
+    private fun awaitForm(web:WebView,background:Boolean,onResult:(Boolean)->Unit) {
         val page=web.url.orEmpty()
         if(!trusted(page)){onResult(false);return}
-        val deadline=android.os.SystemClock.elapsedRealtime()+30_000
+        val deadline=android.os.SystemClock.elapsedRealtime()+12_000
         // CAS is a SPA: document load is earlier than its visible form mounting.
         // Wait for a recognisable form without sending credentials or clicking.
         fun ready(){
             if(web.url!=page){onResult(false);return}
             prepare(web)
+            if(background)web.evaluateJavascript("window.__officialLoginMemory?.setBackgroundMode()",null)
             web.evaluateJavascript("!!window.__officialLoginMemory?.describe()"){result->
                 if(web.url!=page)onResult(false)
                 else if(result=="true")onResult(true)
@@ -220,16 +222,21 @@ class OfficialLoginMemory(private val context:Context) {
         // A pending attempt is bounded by the same throttle. A failed login or
         // process death must not disable all future recoveries permanently.
         if(account.isBlank()||!trusted(url)||System.currentTimeMillis()-lastAttempt<120_000){onResult(false);return}
-        val saved=enrollment(account)?:prefs.getString(account,null)?.let{open(account,it)}?:run{onResult(false);return}
+        val saved=enrollment(account)?:prefs.getString(account,null)?.let{open(account,it)}
+        if(saved==null) {
+            val password=inputPassword(account)
+            if(password.isNotEmpty())configureReady(web,account,password,onResult) else onResult(false)
+            return
+        }
         if(saved.getJSONObject("binding").optString("origin")!="https://${Uri.parse(url).host}"){onResult(false);return}
         val script=context.assets.open("official-login-memory.js").bufferedReader().use{it.readText()}
         web.evaluateJavascript(script,null)
         web.evaluateJavascript("window.__officialLoginMemory?.matches(${saved.getJSONObject("binding")})"){matches->
             if(web.url!=url){onResult(false)}
             else if(matches!="true"){
-                // A real CAS captcha requires the user, but they need not retype
-                // their account/password when this exact bound form still matches.
-                web.evaluateJavascript("window.__officialLoginMemory?.configure(${saved.getJSONObject("binding")},${JSONObject.quote(saved.getString("username"))},${JSONObject.quote(saved.getString("password"))},false)"){onResult(false)}
+                // Re-bind only through the current, whitelisted official CAS
+                // adapter. It fills challenges but never submits through one.
+                configureReady(web,account,saved.getString("password"),onResult)
             }
             else if(System.currentTimeMillis()-lastAttempt<120_000){onResult(false)}
             else {

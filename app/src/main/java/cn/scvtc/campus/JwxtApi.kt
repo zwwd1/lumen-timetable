@@ -9,7 +9,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
 
-enum class AuthenticationStage { SESSION, FORM, CHALLENGE, CALLBACK }
+enum class AuthenticationStage { SESSION, FORM, CHALLENGE, NOTICE, REJECTED, CALLBACK }
 class JwxtAuthenticationRequired(val stage:AuthenticationStage=AuthenticationStage.SESSION) : IllegalStateException("AUTH_REQUIRED：教务 Session 需要恢复；离线内容保留")
 
 /** The WebView cookie store is shared by CAS navigation and native HTTP. Each
@@ -60,25 +60,44 @@ class JwxtApi(private val client:OkHttpClient=OkHttpClient.Builder()
         request.header("csrfToken",csrf).header("Accept","application/json, text/plain, */*")
         if(body!=null)request.header("Origin",School.ORIGIN).post(body.toRequestBody("application/json; charset=utf-8".toMediaType()))
         val call=client.newCall(request.build())
-        val cancellation=currentCoroutineContext().job.invokeOnCompletion { if(it is CancellationException)call.cancel() }
-        try { call.execute().use { response ->
-            if(response.code in setOf(401,403) || response.code in 300..399)throw JwxtAuthenticationRequired()
-                        val text=response.body?.byteStream()?.use { input ->
-                val output=java.io.ByteArrayOutputStream();val block=ByteArray(8192)
-                while(true){currentCoroutineContext().ensureActive();val count=input.read(block);if(count<0)break;check(output.size()+count<=3_000_000){"教务响应超过读取上限"};output.write(block,0,count)}
-                output.toString("UTF-8")
-            }.orEmpty()
-            if(text.trimStart().startsWith("<")){
-                if(response.isSuccessful)throw JwxtAuthenticationRequired()
-                error("教务接口 HTTP ${response.code}；原数据保留")
-            }
-            val root=runCatching {Json.parseToJsonElement(text).jsonObject}.getOrElse {error("PAGE_CHANGED：教务返回非 JSON 数据；原内容保留")}
-            val code=root["code"]?.jsonPrimitive?.content
-            if(code in setOf("401","403","51000010","53000010"))throw JwxtAuthenticationRequired()
-            check(response.isSuccessful) {"教务接口 HTTP ${response.code}；原数据保留"}
-            check(code in setOf("200","0") && root["success"]?.jsonPrimitive?.booleanOrNull!=false) {"教务业务响应未成功；原数据保留"}
-            text
-        }} finally {cancellation.dispose()}
+        if(url==IDENTITY)call.timeout().timeout(12,TimeUnit.SECONDS)
+        // Stop the socket at cancellation; a blocking execute() completion
+        // handler cannot interrupt its own suspended coroutine in time.
+        val raw=suspendCancellableCoroutine<Pair<Int,String>> { continuation ->
+            continuation.invokeOnCancellation { call.cancel() }
+            call.enqueue(object:Callback {
+                override fun onFailure(call:Call,e:java.io.IOException) {
+                    if(continuation.isActive)continuation.resumeWith(Result.failure(e))
+                }
+                override fun onResponse(call:Call,response:Response) {
+                    val result=runCatching { response.use {
+                        val output=java.io.ByteArrayOutputStream();val block=ByteArray(8192)
+                        it.body?.byteStream()?.use { input ->
+                            while(continuation.isActive) {
+                                val count=input.read(block);if(count<0)break
+                                check(output.size()+count<=3_000_000){"教务响应超过读取上限"}
+                                output.write(block,0,count)
+                            }
+                        }
+                        it.code to output.toString("UTF-8")
+                    } }
+                    if(continuation.isActive)continuation.resumeWith(result)
+                }
+            })
+        }
+        currentCoroutineContext().ensureActive()
+        val (status,text)=raw
+        if(status in setOf(401,403) || status in 300..399)throw JwxtAuthenticationRequired()
+        if(text.trimStart().startsWith("<")){
+            if(status in 200..299)throw JwxtAuthenticationRequired()
+            error("教务接口 HTTP $status；原数据保留")
+        }
+        val root=runCatching {Json.parseToJsonElement(text).jsonObject}.getOrElse {error("PAGE_CHANGED：教务返回非 JSON 数据；原内容保留")}
+        val code=root["code"]?.jsonPrimitive?.content
+        if(code in setOf("401","403","51000010","53000010"))throw JwxtAuthenticationRequired()
+        check(status in 200..299) {"教务接口 HTTP $status；原数据保留"}
+        check(code in setOf("200","0") && root["success"]?.jsonPrimitive?.booleanOrNull!=false) {"教务业务响应未成功；原数据保留"}
+        text
     }
     suspend fun student(expected:String):JwxtStudent {
         val body=json(IDENTITY,"{}")

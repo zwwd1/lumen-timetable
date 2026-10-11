@@ -56,6 +56,11 @@ internal fun initialGradeSemester(terms: List<AcademicTerm>, catalog: AcademicSt
 internal fun AcademicGradeReport.forSemester(id: String): AcademicGradeReport {
     if (grades.isNotEmpty() && grades.none { it.term.isBlank() || it.term == id })
         throw AcademicException(AcademicStatus.PAGE_CHANGED, "学校返回了其他学期的成绩，请刷新重试")
-    return copy(grades = grades.filter { it.term.isBlank() || it.term == id }
-        .map { if (it.term.isBlank()) it.copy(term = id) else it })
+    return selectSemester(id)
 }
+
+/** A complete all-term report may legitimately have no grades for a new term.
+ * The remote single-term response guard above must not validate local browsing. */
+internal fun AcademicGradeReport.selectSemester(id: String): AcademicGradeReport =
+    copy(grades = grades.filter { it.term.isBlank() || it.term == id }
+        .map { if (it.term.isBlank()) it.copy(term = id) else it })
