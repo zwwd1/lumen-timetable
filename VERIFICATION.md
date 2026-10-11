@@ -24,3 +24,7 @@
 插件平台 3.6.0 线上一致性检查通过。SDK 开发包、契约、文档和规则按原发布门槛校验；工具链自测依据上游公开收据，不是本机执行的应用测试。详情见 [平台同步记录](docs/PLUGIN_PLATFORM_3_6.md)。
 
 arm64 包：`scvtc-zhixue-1.2.4-arm64-v8a.apk`，129,829,256 字节，SHA-256 `b459527bf8b59d44bfd8b5d80bb0706c833a7932d1bf28cada5fcc8cb43a593e`。与通用包的 DEX、资源、资产和 arm64 原生库逐项一致，保留通用包的其他架构；不是删减功能包。
+
+## 实际发布
+
+[璟 1.2.4](https://github.com/zwwd1/scvtc-zhixue/releases/tag/v1.2.4) 已公开；[自动发布任务](https://github.com/zwwd1/scvtc-zhixue/actions/runs/38115199024) 在提交 `428017a4ae77cbe2448f8ce7336189517700e174` 上通过，包括插件平台一致性门槛。标签指向构建提交 `ed8f98c69c5995cb6837d3fd71ca0c0db5cd74a7`，两份 APK 的 GitHub 资产字节数和 SHA-256 与本机结果一致。更新清单沿用原受信任签名密钥，新增 ARM64 下载项；其他架构保留通用包。此次追加只改变发布记录和更新清单。

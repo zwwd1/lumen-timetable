@@ -50,7 +50,7 @@
     "sha256": "3030930a1e47e8edec5595e72fbf730c1438934291f50324c57f0993ed7d1dd0"
   },
   "expectedReleaseUrl": "https://github.com/zwwd1/scvtc-zhixue/releases/tag/v1.2.4",
-  "releasePublicationStatus": "pending",
+  "releasePublicationStatus": "published_verified",
   "cloudServicesPaused": true,
   "report": "VERIFICATION.md",
   "additionalArtifacts": [
@@ -79,5 +79,49 @@
         "r8Mapping": true
       }
     }
-  ]
+  ],
+  "releasePublication": {
+    "releaseId": 409443805,
+    "releaseUrl": "https://github.com/zwwd1/scvtc-zhixue/releases/tag/v1.2.4",
+    "tag": "v1.2.4",
+    "publishedAt": "2026-10-11T05:35:57Z",
+    "tagSourceCommit": "ed8f98c69c5995cb6837d3fd71ca0c0db5cd74a7",
+    "workflowRunId": 38115199024,
+    "workflowUrl": "https://github.com/zwwd1/scvtc-zhixue/actions/runs/38115199024",
+    "workflowConclusion": "success",
+    "publisherCommit": "428017a4ae77cbe2448f8ce7336189517700e174",
+    "pluginPlatformGate": "passed_sdk_3.6.0",
+    "assets": [
+      {
+        "file": "BUILD_PROVENANCE.json",
+        "size": 2822,
+        "digest": "sha256:1f9930f323c023fc95174ee3b6a4072c2f43d356a8b5b5471e302734817745c9",
+        "url": "https://github.com/zwwd1/scvtc-zhixue/releases/download/v1.2.4/BUILD_PROVENANCE.json"
+      },
+      {
+        "file": "scvtc-zhixue-1.2.4-arm64-v8a.apk",
+        "size": 129829256,
+        "digest": "sha256:b459527bf8b59d44bfd8b5d80bb0706c833a7932d1bf28cada5fcc8cb43a593e",
+        "url": "https://github.com/zwwd1/scvtc-zhixue/releases/download/v1.2.4/scvtc-zhixue-1.2.4-arm64-v8a.apk"
+      },
+      {
+        "file": "scvtc-zhixue-1.2.4-arm64-v8a.apk.sha256",
+        "size": 99,
+        "digest": "sha256:1b43787f1d956d44c5ef5559eba35059bbe3827b07520481b6264151f9483825",
+        "url": "https://github.com/zwwd1/scvtc-zhixue/releases/download/v1.2.4/scvtc-zhixue-1.2.4-arm64-v8a.apk.sha256"
+      },
+      {
+        "file": "scvtc-zhixue-1.2.4.apk",
+        "size": 332665139,
+        "digest": "sha256:477a2a49d533bbb5b72c3ed3ad9222137f9302839fc7ed6611c4291753d8d92c",
+        "url": "https://github.com/zwwd1/scvtc-zhixue/releases/download/v1.2.4/scvtc-zhixue-1.2.4.apk"
+      },
+      {
+        "file": "scvtc-zhixue-1.2.4.apk.sha256",
+        "size": 89,
+        "digest": "sha256:ceb7371e9a0c50a2659850ffa994853ca47a24ad0f93cd64146a67fbf84b38c3",
+        "url": "https://github.com/zwwd1/scvtc-zhixue/releases/download/v1.2.4/scvtc-zhixue-1.2.4.apk.sha256"
+      }
+    ]
+  }
 }
