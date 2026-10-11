@@ -1,9 +1,6 @@
 package com.tyust.course.scvtc
 
 import android.content.Context
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
-import android.util.Base64
 import androidx.room.*
 import cn.scvtc.campus.core.*
 import com.tyust.course.academic.*
@@ -20,11 +17,6 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import org.json.JSONObject
-import java.security.KeyStore
-import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
-import javax.crypto.SecretKey
-import javax.crypto.spec.GCMParameterSpec
 import java.util.concurrent.TimeUnit
 
 @Entity(tableName="school_schedules", primaryKeys=["account","semester"])
@@ -46,20 +38,14 @@ abstract class ScvtcDatabase:RoomDatabase(){abstract fun schedules():ScvtcDao;ab
 
 /** Request credentials stay in Keystore-encrypted app-private storage; exports never include them. */
 private object RecipeVault {
- private const val alias="scvtc-next-query"
- private val keyLock=Any()
- private fun key():SecretKey {val ks=KeyStore.getInstance("AndroidKeyStore").apply{load(null)};return (ks.getKey(alias,null) as? SecretKey)?:KeyGenerator.getInstance("AES","AndroidKeyStore").apply{init(KeyGenParameterSpec.Builder(alias,KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT).setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).build())}.generateKey()}
- fun seal(text:String):String {val c=Cipher.getInstance("AES/GCM/NoPadding");c.init(Cipher.ENCRYPT_MODE,key());return Base64.encodeToString(c.iv+c.doFinal(text.toByteArray()),Base64.NO_WRAP)}
- fun open(text:String):String {val b=Base64.decode(text,Base64.NO_WRAP);val c=Cipher.getInstance("AES/GCM/NoPadding");c.init(Cipher.DECRYPT_MODE,key(),GCMParameterSpec(128,b.copyOfRange(0,12)));return String(c.doFinal(b.copyOfRange(12,b.size)))}
- fun sealPayload(scope:String,text:String):String {
-  val c=Cipher.getInstance("AES/GCM/NoPadding");c.init(Cipher.ENCRYPT_MODE,synchronized(keyLock){key()});c.updateAAD(scope.toByteArray())
-  return "encrypted:v1:"+Base64.encodeToString(c.iv+c.doFinal(text.toByteArray()),Base64.NO_WRAP)
- }
+ private val cipher get()=cn.scvtc.campus.LocalCipher(ScvtcRuntime.context,"scvtc-next-query")
+ fun seal(text:String):String=cipher.seal(text)
+ fun open(text:String):String=cipher.open(text)
+ fun sealPayload(scope:String,text:String):String="encrypted:v2:"+cipher.seal(text,scope)
  fun openPayload(scope:String,text:String):String {
-  if(!text.startsWith("encrypted:v1:"))return text // Forward-compatible reading of the first release.
-  val b=Base64.decode(text.removePrefix("encrypted:v1:"),Base64.NO_WRAP)
-  val c=Cipher.getInstance("AES/GCM/NoPadding");c.init(Cipher.DECRYPT_MODE,synchronized(keyLock){key()},GCMParameterSpec(128,b.copyOfRange(0,12)));c.updateAAD(scope.toByteArray())
-  return String(c.doFinal(b.copyOfRange(12,b.size)))
+  if(text.startsWith("encrypted:v2:"))return cipher.open(text.removePrefix("encrypted:v2:"),scope)
+  if(text.startsWith("encrypted:v1:"))return cipher.open(text.removePrefix("encrypted:v1:"),scope)
+  return text // First-release plaintext records remain readable.
  }
 }
 object ScvtcRuntime {
@@ -188,7 +174,14 @@ object ScvtcRuntime {
  }
  suspend fun snapshot():ScvtcSnapshot?=db.schedules().read(account,semester)
  private fun scope(a:String,t:String,m:String)="$a|$t|$m"
- private fun decode(a:String,t:String,m:String,payload:String)=json.decodeFromString<Extraction>(RecipeVault.openPayload(scope(a,t,m),payload))
+ private fun decode(a:String,t:String,m:String,payload:String):Extraction?=try {
+  json.decodeFromString<Extraction>(RecipeVault.openPayload(scope(a,t,m),payload))
+ }catch(e:cn.scvtc.campus.LocalCipher.Unavailable){
+  val recoveryKey="unreadable-encrypted:$a:$t:$m"
+  if(!prefs.contains(recoveryKey))check(prefs.edit().putString(recoveryKey,payload).commit()){"未能保留原加密记录，请重试"}
+  status.value=e.message.orEmpty()
+  null
+ }
  private fun encode(value:Extraction)=RecipeVault.sealPayload(scope(value.account,value.semester,value.module),json.encodeToString(value))
  suspend fun extraction():Extraction?=snapshot()?.let{decode(it.account,it.semester,"schedule",it.payload)}
  suspend fun save(next:Extraction,recipe:QueryRecipe?=null,finishBatch:Boolean=true,valid:()->Boolean={true}):Extraction = mutex.withLock {

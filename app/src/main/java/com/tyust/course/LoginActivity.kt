@@ -354,7 +354,7 @@ class LoginActivity : ComponentActivity() {
         val currentSchool = selectedLoginSchool
         if(currentSchool?.id=="scvtc") {
             schoolAuthenticationLauncher.launch(Intent(this,com.tyust.course.scvtc.ScvtcWebActivity::class.java)
-                .putExtra("url",cn.scvtc.campus.CasAuthManager.PROVIDED_H5_ENTRY)
+                .putExtra("url",cn.scvtc.campus.CasAuthManager.JWXT_SSO_ENTRY)
                 .putExtra("verification_only",true)
                 .putExtra("expected_account",nativeLoginAccount.ifBlank { com.tyust.course.scvtc.ScvtcRuntime.account }))
             return

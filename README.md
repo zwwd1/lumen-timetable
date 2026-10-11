@@ -6,7 +6,7 @@
 
 这是为四川职业技术学院重构的 Android 教务应用，基于川职 Next 的课程与插件架构。它把课表、成绩、学分和学校服务放在一起，适合希望少切几个页面、把学业看得更清楚的同学。
 
-[下载 APK](https://github.com/zwwd1/scvtc-zhixue/releases/latest) · [反馈问题](https://github.com/zwwd1/scvtc-zhixue/issues) · [更新记录](release-notes/v1.2.4.md)
+[下载 APK](https://github.com/zwwd1/scvtc-zhixue/releases/latest) · [反馈问题](https://github.com/zwwd1/scvtc-zhixue/issues) · [更新记录](release-notes/v1.2.5.md)
 
 ## 连接学校，回到日常
 
@@ -20,7 +20,7 @@
 
 ## 两个项目，侧重不同
 
-[晷](https://github.com/zwwd1/scvtc-kejian) 从课表出发，保留 SleepDown 的课程与作息体验；璟把课表和更多教务服务连接起来，保留完整浏览器、地图、模型推理与插件运行能力。两者各自保存本机数据，云服务暂停。
+[晷](https://github.com/zwwd1/scvtc-kejian) 从课表出发，保留 SleepDown 的课程与作息体验；璟把课表和更多教务服务连接起来。两者各自保存本机数据，云服务暂停。
 
 ## 代码里的来路
 
@@ -32,15 +32,19 @@
 
 ## 安装与构建
 
-64 位 ARM 手机可选 arm64 包，体积更小；不确定机型时选择通用包。两种包功能一致、签名一致，可保留数据覆盖升级。
+日常使用下载默认的川职包：课表、成绩、学分、官方认证、编辑、提醒、组件和 AI 均保留。它使用系统 WebView 连接学校，不再携带另一套浏览器内核。
+
+需要第三方嵌入浏览器扩展时，下载文件名含 `platform` 的完整插件平台包。Gecko、ONNX 和原模型仍在这个包中；它与川职包使用相同包名、原签名和数据格式，可以覆盖切换。应用内更新会保留当前包的类型。两种分发均提供 ARM64 与通用包；同一分发内功能相同，不确定机型时选通用包。
 
 使用 JDK 21、Android SDK 37.0 与仓库中的 Gradle Wrapper：
 
 ```powershell
-.\gradlew.bat :app:assembleRelease
+.\gradlew.bat :app:assembleCampusRelease
+# 完整插件平台包
+.\gradlew.bat :app:assemblePlatformRelease
 ```
 
-构建会输出各架构 APK 与通用包。正式更新沿用第一版包名和签名；自行签名的包不能覆盖正式版。密钥留在仓库外，见构建说明。插件接口须通过 [平台一致性检查](spec/PLUGIN-PLATFORM-RELEASE.md)。
+构建会输出各架构 APK 与通用包。专用内核、推理代码和模型位于 `app/src/platform`；本校页面与系统 WebView 认证共用 `app/src/main`。正式更新沿用第一版包名和签名；自行签名的包不能覆盖正式版。密钥留在仓库外，见构建说明。完整插件平台保留 [平台一致性检查](spec/PLUGIN-PLATFORM-RELEASE.md)。
 
 [GitHub Release](https://github.com/zwwd1/scvtc-zhixue/releases) 提供安装包、源码标签与 SHA-256。[验证记录](VERIFICATION.md) 说明完成了哪些检查，哪些仍待手机确认。
 

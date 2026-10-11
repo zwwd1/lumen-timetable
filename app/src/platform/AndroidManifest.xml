@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity android:name="com.tyust.course.academic.plugin.PluginEmbeddedBrowserActivity" android:exported="false" android:process=":plugin_embedded_browser" android:windowSoftInputMode="adjustResize" />
+        <service android:name="com.tyust.course.academic.plugin.PluginEmbeddedBrowserService" android:exported="false" android:process=":plugin_embedded_browser" />
+    </application>
+</manifest>

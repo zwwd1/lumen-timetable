@@ -589,7 +589,7 @@ fun LoginScreen(
             // Version Text
             AnimatedVisibility(visible = visible, enter = fadeIn(animationSpec = androidx.compose.animation.core.tween(800))) {
                 Text(
-                    text = "教务助手 · 第三方客户端",
+                    text = "璟 · 非学校官方客户端",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     letterSpacing = 0.sp

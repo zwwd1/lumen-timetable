@@ -12,7 +12,7 @@ import org.json.JSONObject
 import java.nio.FloatBuffer
 import kotlin.math.abs
 
-/** Local inference for the model's 320x160, full-height strip puzzle format. */
+/** Bundled platform inference for the model's 320x160, full-height strip puzzle format. */
 internal object PluginSliderModel {
     private const val MODEL = "plugin-models/slider-gap.ort"
     private const val DIGEST = "ce9623e1f58b46bc5e7485dffc6449d36255af5e9e2d877bb4db94e8c8b21ee7"

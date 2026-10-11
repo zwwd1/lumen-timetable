@@ -2,22 +2,15 @@ package cn.scvtc.campus
 
 import android.content.Context
 import android.net.Uri
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
-import android.util.Base64
 import android.webkit.WebView
 import androidx.webkit.*
 import org.json.JSONObject
-import java.security.KeyStore
-import javax.crypto.*
-import javax.crypto.spec.GCMParameterSpec
 
 /** Credentials are captured only from a user's real submit, then bound to verified identity. */
 class OfficialLoginMemory(private val context:Context) {
     private val origins=setOf("https://jwxt.scvtc.edu.cn","https://portal.scvtc.edu.cn","https://cas.scvtc.edu.cn")
     private val prefs=context.getSharedPreferences("official_login_memory",Context.MODE_PRIVATE)
     companion object {
-        private val KEY_LOCK=Any()
         private const val ENROLLMENT_TTL=15*60*1000L
     }
     /** An encrypted short-lived candidate survives the visible WebView and is
@@ -57,7 +50,7 @@ class OfficialLoginMemory(private val context:Context) {
      * redirects to the desktop CAS form. Do not send a password to a new form. */
     fun recoveryNavigation(web:WebView,account:String,url:String):Boolean {
         val current=Uri.parse(url)
-        if(current.scheme!="https"||current.host!="cas.scvtc.edu.cn"||current.port !in setOf(-1,443)||current.path!="/cas/WEB/index.html"||usedH5Entry)return false
+        if(current.scheme!="https"||current.host!="cas.scvtc.edu.cn"||current.port !in setOf(-1,443)||current.path !in setOf("","/","/cas/WEB/index.html")||usedH5Entry)return false
         // Keep the actual JWXT service from the official SSO redirect. Sending
         // the user to an unrelated service loses the target Session handoff.
         val service=current.getQueryParameter("service")?:return false
@@ -69,22 +62,9 @@ class OfficialLoginMemory(private val context:Context) {
         return true
     }
     private fun trusted(url:String):Boolean=runCatching{Uri.parse(url).let{it.scheme=="https"&&it.port in setOf(-1,443)&&it.userInfo==null&&"https://${it.host}" in origins}}.getOrDefault(false)
-    private fun key():SecretKey = synchronized(KEY_LOCK) {
-        val store=KeyStore.getInstance("AndroidKeyStore").apply{load(null)}
-        store.getKey("scvtc.official.login.v1",null) as? SecretKey ?: KeyGenerator.getInstance("AES","AndroidKeyStore").apply{
-            init(KeyGenParameterSpec.Builder("scvtc.official.login.v1",KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).setKeySize(256).build())
-        }.generateKey()
-    }
-    private fun seal(account:String,text:String):String {
-        val cipher=Cipher.getInstance("AES/GCM/NoPadding");cipher.init(Cipher.ENCRYPT_MODE,key());cipher.updateAAD(account.toByteArray())
-        return Base64.encodeToString(cipher.iv+cipher.doFinal(text.toByteArray()),Base64.NO_WRAP)
-    }
-    private fun open(account:String,text:String):JSONObject?=runCatching{
-        val bytes=Base64.decode(text,Base64.NO_WRAP);require(bytes.size>28)
-        val cipher=Cipher.getInstance("AES/GCM/NoPadding");cipher.init(Cipher.DECRYPT_MODE,key(),GCMParameterSpec(128,bytes.copyOfRange(0,12)));cipher.updateAAD(account.toByteArray())
-        JSONObject(String(cipher.doFinal(bytes.copyOfRange(12,bytes.size))))
-    }.getOrNull()
+    private val cipher=LocalCipher(context,"scvtc.official.login.v1")
+    private fun seal(account:String,text:String):String= cipher.seal(text,account)
+    private fun open(account:String,text:String):JSONObject?=runCatching { JSONObject(cipher.open(text,account)) }.getOrNull()
     /** Only observed headers for the three verified JSON endpoints are retained.
      * The per-account AES-GCM AAD prevents reuse in another account. */
     fun apiHeaders(account:String,url:String):Map<String,String> =

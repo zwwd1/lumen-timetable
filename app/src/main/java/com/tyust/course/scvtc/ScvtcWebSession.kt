@@ -77,6 +77,8 @@ object ScvtcWebSession {
    }
    override fun shouldOverrideUrlLoading(v:WebView,r:WebResourceRequest):Boolean{
     val url=r.url.toString()
+    val account=capture?.authenticationAccount?.ifBlank { ScvtcRuntime.account } ?: ScvtcRuntime.account
+    if(r.isForMainFrame && login.recoveryNavigation(v,account,url))return true
     if(url=="about:blank"||OfficialWebNavigation.trusted(url))return false
     if(r.isForMainFrame){external(v,url);if(v===popupWeb)popup?.dismiss()}
     return true

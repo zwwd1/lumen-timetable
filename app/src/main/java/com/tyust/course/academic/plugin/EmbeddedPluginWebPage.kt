@@ -31,7 +31,7 @@ import org.json.JSONObject
         try {
             val result = PluginEmbeddedBrowser.preparePage(app, pkg, owner, declaration, params)
             result.optString("migrationMessage").takeIf { it.isNotBlank() }?.let { Toast.makeText(app, it, Toast.LENGTH_LONG).show() }
-            browser.launch(Intent(app, PluginEmbeddedBrowserActivity::class.java).putExtra("handle", result.getString("handle")))
+            browser.launch(Intent().setClassName(app, "com.tyust.course.academic.plugin.PluginEmbeddedBrowserActivity").putExtra("handle", result.getString("handle")))
         } catch (e: CancellationException) { throw e }
         catch (e: Exception) { message = (e as? PluginException)?.message ?: "内置浏览器未能打开，请重试" }
         finally { loading = false }

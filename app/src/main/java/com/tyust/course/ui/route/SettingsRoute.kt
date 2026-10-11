@@ -105,6 +105,7 @@ fun SettingsRoute(
     var showAboutDialog by remember { mutableStateOf(false) }
     var showAcademicSupport by remember { mutableStateOf(false) }
     var showCreditsDialog by remember { mutableStateOf(false) }
+    var showDonation by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var showQuotaDialog by remember { mutableStateOf(false) }
     var showAccountManagerDialog by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var pendingPasswordDelete by remember { mutableStateOf<UserManager.AccountRecord?>(null) }
@@ -424,6 +425,7 @@ fun SettingsRoute(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 val updates = listOf(
+                    "1.2.5 · 2026-10-11" to "连接邀请按本机数据判断，清除数据后也会出现。认证直接连接教务 SSO，处理本机密钥永久失效，保留已有课表。修正教务同步标题重叠，赞赏入口移到致谢与关于。默认川职包分离专用插件内核；完整插件平台包保留，应用内更新保持当前安装包类型。",
                     "1.2.4 · 2026-10-11" to "更名为璟，换上原创头像与简洁日夜背景。修正登录页键盘留白和内容裁切，密码在本机加密记住，首次安装先邀请连接学校。成绩优先显示缓存，切换学期不重复读取完整报告。入场动画可开关，底栏入口可增减；提供较小的 arm64 包与全架构通用包，功能、玻璃动效和既有数据保留。",
                     "1.2.2 · 2026-10-10" to "填写学号和密码后自动连接学校，身份核验通过就开始后台同步。会话过期自动恢复；切换账号保留各自的加密凭据，退出登录仍保留离线记录。重做课程首页和个人页，成绩、学分与刷新进度衔接更清楚，失败可以继续用缓存。壁纸、底栏和完整玻璃动效继续保留。",
                     "1.2.1 · 2026-10-10" to "统一首页与服务中心的成绩入口，完善成绩搜索、课程性质筛选、排序及按筛选导出。优先显示加密缓存，刷新失败保留成绩，完善学分概况、同步任务和账号退出确认。AI 支持停止与重试上一条、清除对话确认和配置保存状态。保留既有壁纸、玻璃动效与用户数据，云服务仍暂停。",
@@ -459,6 +461,18 @@ fun SettingsRoute(
                         )
                     }
                 }
+            }
+        }
+    }
+
+    if (showDonation) com.tyust.course.ui.system.GlassSubpage(onDismiss = { showDonation = false }) { close ->
+        Column(Modifier.fillMaxSize()) {
+            com.tyust.course.ui.system.SystemTopBar("支持维护", actions = { SystemSecondaryButton("完成", close) })
+            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+                .navigationBarsPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text("Epiphany 的赞赏码", style = MaterialTheme.typography.titleMedium)
+                cn.scvtc.campus.CampusDonationImage()
+                Text("自愿支持个人维护，不影响任何功能使用。", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
@@ -509,7 +523,7 @@ fun SettingsRoute(
                 com.tyust.course.ui.system.SystemDivider()
 
                 Text(
-                    text = "项目维护与协作",
+                    text = "璟 · 项目维护与协作",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -523,6 +537,8 @@ fun SettingsRoute(
                 )
 
                 com.tyust.course.ui.system.SystemDivider()
+
+                SystemSecondaryButton("支持维护", { showCreditsDialog = false; showDonation = true }, modifier = Modifier.fillMaxWidth())
 
                 Text(
                     text = "本软件为开源免费项目，仅供个人学习与技术交流使用，严禁用于任何商业目的与倒卖。",

@@ -102,7 +102,7 @@ object UpdateManifestVerifier {
     fun key(encoded: String): PublicKey = KeyFactory.getInstance("EC").generatePublic(
         X509EncodedKeySpec(encoded.decodeBase64()?.toByteArray() ?: error("Invalid public key")))
 
-    fun verify(text: String, keys: Map<String, PublicKey>, channel: String, preferredAbis: List<String> = emptyList()): UpdateManifest {
+    fun verify(text: String, keys: Map<String, PublicKey>, channel: String, preferredAbis: List<String> = emptyList(), distribution: String = "campus"): UpdateManifest {
         try {
             val envelope = UpdateJson.parse(text)
             require(envelope.get("schemaVersion") is Number && envelope.getLong("schemaVersion") == 2L)
@@ -116,21 +116,27 @@ object UpdateManifestVerifier {
             val payload = Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
                 .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString()
             val p = UpdateJson.parse(payload)
-            fun integer(name: String, min: Long, max: Long): Long {
-                val v = p.get(name); require(v is Long || v is Int)
+            fun integer(name: String, min: Long, max: Long, document: JSONObject = p): Long {
+                val v = document.get(name); require(v is Long || v is Int)
                 return (v as Number).toLong().also { require(it in min..max) }
             }
             require(p.getString("channel") == channel && channel in setOf("stable", "test"))
             require(p.getString("packageName") == "cn.scvtc.campus.next")
             val code = integer("versionCode", 1, Int.MAX_VALUE.toLong()).toInt()
             val name = p.getString("versionName"); require(name.matches(Regex("[0-9]+\\.[0-9]+\\.[0-9]+")))
-            var sha = p.getString("sha256"); require(sha.matches(Regex("[a-f0-9]{64}")))
+            val artifact = when(distribution) {
+                "campus" -> p
+                "platform" -> p.optJSONObject("distributions")?.optJSONObject("platform")
+                    ?: updateError("DISTRIBUTION_UNAVAILABLE", "本次尚无完整插件平台更新，请稍后重试")
+                else -> updateError("DISTRIBUTION_UNAVAILABLE", "安装包类型未识别")
+            }
+            var sha = artifact.getString("sha256"); require(sha.matches(Regex("[a-f0-9]{64}")))
             val source = p.getString("sourceSha"); require(source.matches(Regex("[a-f0-9]{40}")))
             val build = p.getString("buildId"); require(build.matches(Regex("[0-9]{1,24}")))
             val published = p.getString("publishedAt"); require(published.matches(Regex("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")))
             val notes = p.getString("releaseNotes"); require(notes.length <= 20000)
             require(p.get("forceUpdate") is Boolean)
-            val mirrors = p.getJSONArray("mirrors"); require(mirrors.length() in 1..8)
+            val mirrors = artifact.getJSONArray("mirrors"); require(mirrors.length() in 1..8)
             val ids = mutableSetOf<String>()
             var entries = (0 until mirrors.length()).map { i ->
                 val m = mirrors.getJSONObject(i); val id = m.getString("id"); val label = m.getString("name")
@@ -138,10 +144,10 @@ object UpdateManifestVerifier {
                 val url = m.getString("url"); require(validUrl(url))
                 UpdateMirror(id, label, url)
             }
-            var size=integer("size",1,512L*1024*1024)
+            var size=integer("size",1,512L*1024*1024,artifact)
             // ABI-specific files belong to the signed payload. Existing clients
             // continue to read the universal artifact at the top level.
-            val artifacts=p.optJSONArray("artifacts")
+            val artifacts=artifact.optJSONArray("artifacts")
             val variants=linkedMapOf<String,Triple<Long,String,List<UpdateMirror>>>()
             if(artifacts!=null) {
                 require(artifacts.length() in 1..4)

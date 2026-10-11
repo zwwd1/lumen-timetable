@@ -45,6 +45,7 @@ class CasAuthManager(private val context:Context,private val api:JwxtApi) {
                 val u=r.url
                 val approved=u.scheme=="https" && u.userInfo==null && (u.host in setOf("cas.scvtc.edu.cn","jwxt.scvtc.edu.cn")&&u.port in setOf(-1,443) || u.host=="www.shulin-soft.com"&&u.port==8267&&u.path=="/casLogin.html")
                 if(!approved)failure.completeExceptionally(IllegalStateException("SSO 跳转到未确认来源；原内容保留"))
+                if(approved && r.isForMainFrame && login.recoveryNavigation(v,account,u.toString()))return true
                 return !approved
             }
             override fun onPageFinished(v:WebView,url:String) {
@@ -76,17 +77,17 @@ class CasAuthManager(private val context:Context,private val api:JwxtApi) {
             // An explicit password login must submit those credentials. An old
             // CAS/target cookie must not promote an untested replacement password.
             if(password!=null)clearLoginCookies()
-            // Match the working mobile password entry, then obtain JWXT's own
-            // session through its official SSO callback. Neither URL proves login.
-            web.loadUrl(if(password!=null)PROVIDED_H5_ENTRY else JWXT_SSO_ENTRY)
+            // Start at the actual target service. CAS's observed redirect supplies
+            // its callback; mobile conversion preserves the complete service query.
+            web.loadUrl(JWXT_SSO_ENTRY)
             withTimeout(90_000) {
                 while(true) {
                     if(failure.isCompleted)failure.await()
                     if(!submitted || !targetReady){delay(500);continue}
                     try {
                         val student=api.student(account)
-                        onVerified(student)
                         login.confirmed(student.account,promoteEnrollment=password!=null)
+                        onVerified(student)
                         return@withTimeout student
                     }
                     catch(e:JwxtAuthenticationRequired){delay(1500)}

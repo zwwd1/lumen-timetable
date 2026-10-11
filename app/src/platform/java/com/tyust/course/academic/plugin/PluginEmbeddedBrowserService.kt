@@ -21,7 +21,7 @@ internal suspend fun <T : Any> GeckoResult<T>.awaitBrowser(): T = suspendCancell
         { if (c.isActive) c.resumeWithException(it ?: PluginException(PluginErrorCode.UNSUPPORTED, "浏览器环境初始化失败")) })
 }
 
-/** Nothing in this process initializes the App registry, keystore or the default WebView. */
+/** The complete platform package owns this process; it never initializes the main app registry. */
 internal object EmbeddedBrowserRuntime {
     data class Page(val handle: String, val session: GeckoSession, val origins: Set<String>, val scriptHandle: String?, var url: String, var back: Boolean = false, var loading: Boolean = true)
     var profile: String? = null

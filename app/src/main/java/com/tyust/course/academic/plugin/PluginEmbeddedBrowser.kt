@@ -20,7 +20,11 @@ internal object PluginEmbeddedBrowser {
     fun enabled(pkg: PluginPackage, serverId: String) = PluginJson.objects(pkg.manifest.json.optJSONArray("servers") ?: JSONArray())
         .any { it.optString("id") == serverId && it.optJSONObject("browser")?.optString("engine") == "embedded" }
     fun enabled(pkg: PluginPackage, owner: AcademicSession) = enabled(pkg, owner.key.schoolId.removePrefix("service:${pkg.manifest.id}:"))
-    fun requireSupport() { if (Build.VERSION.SDK_INT < 26) throw PluginException(PluginErrorCode.UNSUPPORTED, "内置浏览器需要 Android 8.0 或更新版本，App 其他功能可继续使用") }
+    fun requireSupport() {
+        if (!com.tyust.course.BuildConfig.BUNDLED_PLUGIN_ENGINES)
+            throw PluginException(PluginErrorCode.UNSUPPORTED, "此扩展需要完整插件平台安装包；川职教务和本机功能可继续使用")
+        if (Build.VERSION.SDK_INT < 26) throw PluginException(PluginErrorCode.UNSUPPORTED, "内置浏览器需要 Android 8.0 或更新版本，App 其他功能可继续使用")
+    }
 
     private class Connection(val app: Context, val pkg: PluginPackage, val session: AcademicSession, val profile: String, val server: JSONObject) : ServiceConnection {
         val ready = CompletableDeferred<IBinder>(); val died = CompletableDeferred<Unit>()
@@ -142,7 +146,7 @@ internal object PluginEmbeddedBrowser {
         val next = Connection(app.applicationContext, pkg, session, profile, accounts.server(pkg, serverId))
         try {
             withContext(Dispatchers.Main) {
-                if (!next.app.bindService(Intent(next.app, PluginEmbeddedBrowserService::class.java), next, Context.BIND_AUTO_CREATE)) throw PluginException(PluginErrorCode.UNSUPPORTED, "无法连接内置浏览器")
+                if (!next.app.bindService(Intent().setClassName(next.app, "com.tyust.course.academic.plugin.PluginEmbeddedBrowserService"), next, Context.BIND_AUTO_CREATE)) throw PluginException(PluginErrorCode.UNSUPPORTED, "无法连接内置浏览器")
             }
             withTimeout(30_000) { next.ready.await() }
             connection = next
@@ -207,13 +211,15 @@ internal object PluginEmbeddedBrowser {
         show(app, result.getString("handle")); return result
     }
     private suspend fun show(app: Context, handle: String) = withContext(Dispatchers.Main) {
-        app.startActivity(Intent(app, PluginEmbeddedBrowserActivity::class.java).putExtra("handle", handle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        requireSupport()
+        app.startActivity(Intent().setClassName(app, "com.tyust.course.academic.plugin.PluginEmbeddedBrowserActivity").putExtra("handle", handle).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
     suspend fun pageControl(app: Context, pkg: PluginPackage, owner: AcademicSession, handle: String, close: Boolean): JSONObject {
         val c = connection?.takeIf { it.pkg.manifest.id == pkg.manifest.id && it.namespace == PluginStorageScope.session(owner, pkg.manifest.id, !pkg.official) } ?: throw PluginException(PluginErrorCode.NOT_OPEN, "浏览器会话已关闭")
         return rpc(c, if (close) "page.close" else "page.status", JSONObject().put("handle", handle))
     }
     suspend fun scriptStatus(app: Context, pkg: PluginPackage, owner: AcademicSession, id: String): JSONObject {
+        requireSupport()
         val store = PluginUserscripts.store(app, pkg, owner, id)
         val status = withContext(Dispatchers.IO) { store.publicStatus() }
         val live = connection?.takeIf { it.valid() && it.namespace == PluginStorageScope.session(owner, pkg.manifest.id, !pkg.official) }?.script?.takeIf { !it.closed && it.policy.id == id }

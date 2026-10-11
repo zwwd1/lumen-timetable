@@ -83,7 +83,7 @@ class UpdateManager internal constructor(private val context: Context,
 
     private fun cacheFile(channel: String) = AtomicFile(File(directory, "$channel-manifest.json"))
     private fun cached(channel: String): UpdateManifest? = runCatching {
-        UpdateManifestVerifier.verify(cacheFile(channel).readFully().toString(Charsets.UTF_8), keys, channel, android.os.Build.SUPPORTED_ABIS.toList())
+        UpdateManifestVerifier.verify(cacheFile(channel).readFully().toString(Charsets.UTF_8), keys, channel, android.os.Build.SUPPORTED_ABIS.toList(), if(com.tyust.course.BuildConfig.BUNDLED_PLUGIN_ENGINES) "platform" else "campus")
     }.getOrNull()
     private fun write(file: AtomicFile, text: String) {
         val output = file.startWrite()
@@ -118,7 +118,7 @@ class UpdateManager internal constructor(private val context: Context,
                         output.write(buffer, 0, n)
                     }; output.toByteArray()
                 }
-                val result = UpdateManifestVerifier.verify(bytes.toString(Charsets.UTF_8), keys, selectedChannel, android.os.Build.SUPPORTED_ABIS.toList())
+                val result = UpdateManifestVerifier.verify(bytes.toString(Charsets.UTF_8), keys, selectedChannel, android.os.Build.SUPPORTED_ABIS.toList(), if(com.tyust.course.BuildConfig.BUNDLED_PLUGIN_ENGINES) "platform" else "campus")
                 response.header("ETag")?.let { prefs.edit().putString(key, it).putString("etag-payload:$url", result.envelope).apply() }
                 return result
             }
@@ -320,7 +320,7 @@ class UpdateManager internal constructor(private val context: Context,
     private fun restoreTask() {
         runCatching {
             val json = UpdateJson.parse(taskRecord.readFully().toString(Charsets.UTF_8))
-            val manifest = UpdateManifestVerifier.verify(json.getString("envelope"), keys, channel, android.os.Build.SUPPORTED_ABIS.toList())
+            val manifest = UpdateManifestVerifier.verify(json.getString("envelope"), keys, channel, android.os.Build.SUPPORTED_ABIS.toList(), if(com.tyust.course.BuildConfig.BUNDLED_PLUGIN_ENGINES) "platform" else "campus")
             if (manifest.versionCode < getCurrentVersionCode() || (manifest.versionCode == getCurrentVersionCode() && manifest.channel != "test")) { partial.delete(); completed.delete(); taskRecord.delete(); return }
             task = manifest; taskMirror = json.optString("mirror").ifBlank { null }; taskEtag = json.optString("etag").ifBlank { null }
             val ready = completed.exists() && runCatching { verifyApk(manifest, completed) }.isSuccess

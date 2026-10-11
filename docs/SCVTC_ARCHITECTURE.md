@@ -48,9 +48,14 @@ App 优先恢复本地 Session，失效后尝试 SSO，再必要时使用本机�
 准备 JDK 21、Android SDK Platform 37.0、对应 Build Tools，设置 `JAVA_HOME` 和 `ANDROID_HOME`。
 
 ```sh
-./gradlew :app:assembleRelease
+./gradlew :app:assembleCampusRelease
+./gradlew :app:assemblePlatformRelease
 ```
 
 Windows 使用 `gradlew.bat`，内存较小时加 `--max-workers=1`。发布配置和原签名保存在仓库外；覆盖安装要求 applicationId、原证书与 versionCode 符合升级条件。最终检查 APK SHA-256、证书、ZIP 完整性、16 KiB 对齐和源码对应关系。更新元数据签名与 APK 原签名分别验证。编译通过不等于完成真机验收。
 
-赞赏原图由仓库外 `SCVTC_DONATION_PNG` 输入；未配置的公开源码不含私人支付图。图标、角色和素材来源见 [BRANDING_20261011.md](BRANDING_20261011.md)。
+`campus` 使用系统 WebView 连接川职，保留本校日常功能、地图及本地像素匹配；`platform` 增加专用 Gecko 进程、ONNX 和原模型。两者共享包名、数据、签名和学校认证代码，专用实现与模型位于 `app/src/platform`。完整平台的 SDK 契约文件保持一致；川职包对于要求嵌入引擎的第三方扩展明确返回 `UNSUPPORTED`，不假装执行。签名更新清单按分发类型与设备 ABI 选包，旧客户端继续读取清单顶层的川职包。
+
+`LocalCipher` 兼容旧密文，新的密文记录实际密钥版本。只有明确的密钥永久失效会触发一次新版本生成；读不到的旧记录保留，重新认证和同步后才能取得新的学校数据。读取旧密文不会悄悄生成替代密钥，也不会清库。
+
+赞赏原图由仓库外 `SCVTC_DONATION_PNG` 输入，仅从“致谢与关于”进入；未配置的公开源码不含私人支付图。图标、角色和素材来源见 [BRANDING_20261011.md](BRANDING_20261011.md)。

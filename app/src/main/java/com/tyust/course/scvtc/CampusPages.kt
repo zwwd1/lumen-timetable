@@ -398,7 +398,6 @@ fun NextProfile(revision: Int, onLogin: () -> Unit, onTools: () -> Unit, onSched
     }
     val scope = rememberCoroutineScope()
     var confirmLogout by rememberSaveable(account) { mutableStateOf(false) }
-    var donation by rememberSaveable(account) { mutableStateOf(false) }
     CampusCompanion.initialize(context)
     fun authenticate() { if (account.isBlank()) onLogin() else openSchoolAuthentication(context) }
 
@@ -407,20 +406,10 @@ fun NextProfile(revision: Int, onLogin: () -> Unit, onTools: () -> Unit, onSched
         dismissButton = { SystemSecondaryButton("继续使用", { confirmLogout = false }) }) {
         NextText("本机认证凭据和网页登录状态会清除。离线课表与成绩仍按账号保留；以后联网同步需要重新登录。")
     }
-    if (donation) GlassSubpage(onDismiss = { donation = false }) { close ->
-        Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            NextButton("返回", onClick = close)
-            NextText("Epiphany 的赞赏码")
-            CampusDonationImage()
-            NextText("自愿支持个人维护，不属于学校收费服务。")
-        }
-    }
-    Scaffold(containerColor = androidx.compose.ui.graphics.Color.Transparent, topBar = {
+    Column(Modifier.fillMaxSize()) {
         SystemTopBar("教务同步", navigationIcon = { SystemIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "返回", onBack) },
             actions = { CampusQuickActions() })
-    }) { padding ->
-        LazyColumn(contentPadding = PaddingValues(20.dp, padding.calculateTopPadding() + 12.dp, 20.dp,
+        LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(20.dp, 12.dp, 20.dp,
             WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item {
@@ -461,12 +450,6 @@ fun NextProfile(revision: Int, onLogin: () -> Unit, onTools: () -> Unit, onSched
             }
             if (account.isNotBlank()) item {
                 NextGroup { NextRow("退出学校账号", "清除本机认证，保留离线记录") { confirmLogout = true } }
-            }
-            item {
-                NextGroup {
-                    NextRow("Epiphany 的赞赏码", "自愿支持维护") { donation = true }
-                    NextText("璟 ${com.tyust.course.BuildConfig.VERSION_NAME}\n维护者：zwwd1\n非学校官方客户端", Modifier.padding(16.dp))
-                }
             }
         }
     }

@@ -190,7 +190,7 @@ class MainActivity : FragmentActivity() {
         val hasSeenOnboarding = prefs.getBoolean(KEY_HAS_SEEN_ONBOARDING, false)
         val installation = packageManager.getPackageInfo(packageName, 0)
         val firstInstall = installation.firstInstallTime == installation.lastUpdateTime
-        val needsConnectionGuide = firstInstall && !prefs.getBoolean("scvtc-login-offered", false) && !BuildConfig.UI_PREVIEW
+        val needsConnectionGuide = !prefs.getBoolean("scvtc-login-offered", false) && !BuildConfig.UI_PREVIEW
 
         setContent {
             com.tyust.course.scvtc.NextTheme {
@@ -841,7 +841,7 @@ fun MainScreen(fragmentActivity: FragmentActivity,showSchoolConnection:Boolean=f
 @Composable
 private fun BoxScope.AppBuildWatermarks() {
     Text(
-        text = "川职 · 特供概念版",
+        text = "璟 · 川职",
         modifier = Modifier
             .align(Alignment.BottomEnd)
             .navigationBarsPadding()
