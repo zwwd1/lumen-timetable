@@ -1,20 +1,21 @@
 {
   "schemaVersion": 2,
-  "name": "川职·知学",
+  "name": "璟",
   "builtAtDate": "2026-10-11",
-  "sourceCommit": "db40961b4e45ab7428cfb5436f079585533f41ce",
-  "sourceTree": "5c3aef6336adde3126cb902111bc3ce924bcffb0",
+  "sourceCommit": "ed8f98c69c5995cb6837d3fd71ca0c0db5cd74a7",
+  "sourceTree": "6bf2b4d775e900022c5b369d0e55d1f3339b6139",
   "sourceRepository": "https://github.com/zwwd1/scvtc-zhixue",
   "productionInputsUnchangedAfterBuild": true,
   "artifact": {
-    "file": "scvtc-zhixue-1.2.3.apk",
-    "sha256": "a08e9f122ebbadf0537f91589a9b2396728d43747664447a2e69148e0a9672a4",
-    "size": 343423934,
+    "file": "scvtc-zhixue-1.2.4.apk",
+    "sha256": "477a2a49d533bbb5b72c3ed3ad9222137f9302839fc7ed6611c4291753d8d92c",
+    "size": 332665139,
     "packageName": "cn.scvtc.campus.next",
-    "versionName": "1.2.3",
-    "versionCode": 12,
+    "versionName": "1.2.4",
+    "versionCode": 13,
     "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
-    "nativeLibraryCount": 59
+    "nativeLibraryCount": 59,
+    "abi": "universal"
   },
   "checks": {
     "manifest": true,
@@ -22,6 +23,7 @@
     "zip16KiBAlignment": true,
     "elf64Bit16KiBAlignment": true,
     "elf32Bit4KiBAlignment": true,
+    "nativeAbiCoverage": true,
     "crc": true,
     "sourceAssets": true,
     "sourceCommit": true,
@@ -35,24 +37,47 @@
   "functionalTests": "not_run_at_user_request",
   "deviceTests": "not_run_at_user_request",
   "sourceArchive": {
-    "sha256": "d5ed5884c7f89bf314fdebdddf20a6b9048e5fccf2662bdb05040790ce89bf12",
-    "bytes": 32325029,
-    "fileCount": 1054,
+    "sha256": "27be874cefe7b922651a6dd6a4eacafedc5325eb052fe4577ba640cb599b0617",
+    "bytes": 15895581,
+    "fileCount": 1060,
     "matchesSourceCommit": true
   },
   "additionalBuildInputs": {
     "originalDonationPngSha256": "8ebf7c9b12fbe2917878bad2be227a24987b700a1859177ae63be9bc1bd86ce5"
   },
   "r8Mapping": {
-    "id": "7cf72767fc73f782adc1a199da1e412e8cba879747eb10be6bebc67cf27227cc",
-    "sha256": "a31ce930d42474c6827de359ed2ea6235ed7481e029b432630cee42410a3ebf4"
+    "id": "332a11eacff49f2ff9c2b1cab51814c359ee77ecf1eaeae2c8391b0781e4aaa1",
+    "sha256": "3030930a1e47e8edec5595e72fbf730c1438934291f50324c57f0993ed7d1dd0"
   },
-  "expectedReleaseUrl": "https://github.com/zwwd1/scvtc-zhixue/releases/tag/v1.2.3",
-  "releasePublicationStatus": "published",
+  "expectedReleaseUrl": "https://github.com/zwwd1/scvtc-zhixue/releases/tag/v1.2.4",
+  "releasePublicationStatus": "pending",
   "cloudServicesPaused": true,
   "report": "VERIFICATION.md",
-  "releasePublished": true,
-  "releaseUrl": "https://github.com/zwwd1/scvtc-zhixue/releases/tag/v1.2.3",
-  "releaseVerifiedAssetSha256": "a08e9f122ebbadf0537f91589a9b2396728d43747664447a2e69148e0a9672a4",
-  "releaseWorkflow": "https://github.com/zwwd1/scvtc-zhixue/actions/runs/38068969076"
+  "additionalArtifacts": [
+    {
+      "file": "scvtc-zhixue-1.2.4-arm64-v8a.apk",
+      "sha256": "b459527bf8b59d44bfd8b5d80bb0706c833a7932d1bf28cada5fcc8cb43a593e",
+      "size": 129829256,
+      "packageName": "cn.scvtc.campus.next",
+      "versionName": "1.2.4",
+      "versionCode": 13,
+      "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
+      "nativeLibraryCount": 18,
+      "abi": "arm64-v8a",
+      "checks": {
+        "manifest": true,
+        "originalSignature": true,
+        "zip16KiBAlignment": true,
+        "elf64Bit16KiBAlignment": true,
+        "elf32Bit4KiBAlignment": true,
+        "nativeAbiCoverage": true,
+        "crc": true,
+        "sourceAssets": true,
+        "sourceCommit": true,
+        "originalDonationPng": true,
+        "noPlaintextCredentials": true,
+        "r8Mapping": true
+      }
+    }
+  ]
 }
