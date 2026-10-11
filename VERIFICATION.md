@@ -27,3 +27,5 @@
 `scvtc-zhixue-1.2.5-platform.apk`：332,669,951 字节，SHA-256 `2ef1660104fb9d5e751028749b73137a6a0aa837687dfd97686266fea148a25d`。
 
 `scvtc-zhixue-1.2.5-platform-arm64-v8a.apk`：129,834,068 字节，SHA-256 `8c5a9a53b5e134f855686c03a2836ae6ae9f958c4712305c76d6c5261b463bd5`。
+
+正式发布收据：[GitHub Release](https://github.com/zwwd1/scvtc-zhixue/releases/tag/v1.2.5)。服务器返回的每个 APK 大小与 SHA-256 均与本机原签名产物一致，源码标签指向构建提交，发布任务通过。应用内更新清单只使用这些已公开文件。
