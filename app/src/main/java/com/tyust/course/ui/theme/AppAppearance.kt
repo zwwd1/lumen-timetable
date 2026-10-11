@@ -37,6 +37,7 @@ fun rememberAppWallpaperStyle(): WallpaperStyle {
             glowColor = Color(0xFF263349),
             shadeColor = Color(0xFF05080E),
             isDark = true,
+            image = original.nightImage ?: original.image,
             accents = original.accents.map { it.copy(alpha = it.alpha * 0.55f) }
         )
     }

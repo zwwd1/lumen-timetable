@@ -18,11 +18,11 @@ class CasAuthManager(private val context:Context,private val api:JwxtApi) {
     }
     @SuppressLint("SetJavaScriptEnabled")
     suspend fun restoreJwxt(account:String) { authenticate(account,null) }
-    suspend fun signIn(account:String,password:String):JwxtStudent {
+    suspend fun signIn(account:String,password:String,onVerified:suspend (JwxtStudent)->Unit={}):JwxtStudent {
         require(account.matches(Regex("[0-9]{6,20}")) && password.length in 1..512){"请输入正确的学号和密码"}
-        return authenticate(account,password)
+        return authenticate(account,password,onVerified)
     }
-    private suspend fun authenticate(account:String,password:String?):JwxtStudent=withContext(Dispatchers.Main) {
+    private suspend fun authenticate(account:String,password:String?,onVerified:suspend (JwxtStudent)->Unit={}):JwxtStudent=withContext(Dispatchers.Main) {
         val login=OfficialLoginMemory(context.applicationContext)
         val failure=CompletableDeferred<Unit>()
         val recoveryPages=mutableSetOf<String>()
@@ -76,13 +76,16 @@ class CasAuthManager(private val context:Context,private val api:JwxtApi) {
             // An explicit password login must submit those credentials. An old
             // CAS/target cookie must not promote an untested replacement password.
             if(password!=null)clearLoginCookies()
-            web.loadUrl(if(password==null)JWXT_SSO_ENTRY else PROVIDED_H5_ENTRY)
+            // Match the working mobile password entry, then obtain JWXT's own
+            // session through its official SSO callback. Neither URL proves login.
+            web.loadUrl(if(password!=null)PROVIDED_H5_ENTRY else JWXT_SSO_ENTRY)
             withTimeout(90_000) {
                 while(true) {
                     if(failure.isCompleted)failure.await()
                     if(!submitted || !targetReady){delay(500);continue}
                     try {
                         val student=api.student(account)
+                        onVerified(student)
                         login.confirmed(student.account,promoteEnrollment=password!=null)
                         return@withTimeout student
                     }

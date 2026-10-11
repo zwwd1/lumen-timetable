@@ -30,7 +30,7 @@ object StartupLogoAnimation {
     fun install(activity: Activity) {
         val splash = activity.installSplashScreen()
         splash.setOnExitAnimationListener { provider ->
-            if (played || activity.isFinishing || activity.isDestroyed) { provider.remove(); return@setOnExitAnimationListener }
+            if (played || activity.isFinishing || activity.isDestroyed || !cn.scvtc.campus.AppExperiencePreferences.get(activity).state.value.entranceAnimation) { provider.remove(); return@setOnExitAnimationListener }
             played = true
             val animationsEnabled = if (Build.VERSION.SDK_INT >= 26) ValueAnimator.areAnimatorsEnabled()
                 else Settings.Global.getFloat(activity.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
@@ -91,11 +91,11 @@ object StartupLogoAnimation {
             finish = onFinish
             contentProgress = 0f
             animator = ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = StartupChoreography.DurationMillis
+                duration = 280L
                 interpolator = LinearInterpolator()
                 addUpdateListener {
                     fraction = it.animatedValue as Float
-                    contentProgress = StartupChoreography.content(fraction * StartupChoreography.DurationMillis)
+                    contentProgress = fraction
                     invalidate()
                 }
                 addListener(object : AnimatorListenerAdapter() {
@@ -115,7 +115,7 @@ object StartupLogoAnimation {
 
         override fun onDraw(canvas: Canvas) {
             val bounds = logoBounds ?: return
-            val milliseconds = fraction * StartupChoreography.DurationMillis
+            val milliseconds = 850f + fraction * 250f
             paint.alpha = ((1f - StartupChoreography.content(milliseconds)) * 255).toInt()
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
             renderer.draw(canvas, bounds, milliseconds)

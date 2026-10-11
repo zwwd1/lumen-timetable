@@ -8,6 +8,10 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -21,6 +25,12 @@ import com.tyust.course.ui.system.*
 fun CampusAppearanceSettings(onDismiss: () -> Unit) {
     GlassSubpage(onDismiss) { close ->
         val t = NextAppearance.theme
+        val context=LocalContext.current
+        val experiencePrefs=remember(context){cn.scvtc.campus.AppExperiencePreferences.get(context)}
+        val experience by experiencePrefs.state.collectAsState()
+        val pageRevision by com.tyust.course.academic.plugin.PluginPages.revision.collectAsState()
+        val registry=com.tyust.course.academic.plugin.PluginPages.registry
+        val pinned=remember(pageRevision){registry.pinned()}
         Scaffold(containerColor = Color.Transparent, topBar = {
             SystemTopBar("外观参数", navigationIcon = { SystemIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "返回", close) })
         }) { padding ->
@@ -55,6 +65,22 @@ fun CampusAppearanceSettings(onDismiss: () -> Unit) {
                     NextText("默认沿用原版配方；高斯模式不启用折射或色散。参数由你调整，不按机型降低效果。")
                     NextButton("恢复底栏原版参数") { NextAppearance.update(t.copy(navigationBlurDp = null, navigationRefractionScale = 1f, navigationDispersion = true, navigationHighlightScale = 1f, navigationShadowScale = 1f, navigationSpringScale = 1f)) }
                 } } }
+                item { NextGroup {
+                    NextSwitch("启动入场动画",experience.entranceAnimation,experiencePrefs::entrance)
+                    NextText("短暂淡入衔接首屏；关闭后直接显示。系统关闭动画时自动遵循。",Modifier.padding(16.dp))
+                } }
+                item { NextGroup {
+                    NextText("底部导航入口",Modifier.padding(16.dp))
+                    val choices=remember(pageRevision){registry.pages().filter{it.id in listOf("app.courses","app.schedule","app.grades","app.services","app.settings")}}
+                    choices.forEach { page ->
+                        if(page.id=="app.settings") NextText("设置 · 固定保留",Modifier.padding(16.dp))
+                        else NextSwitch(page.title,page.id in pinned) { enabled ->
+                            val ids=if(enabled) pinned.filter{it!="app.settings"}+page.id+"app.settings" else pinned.filter{it!=page.id}
+                            if(ids.size<=5)registry.customize(ids) else com.tyust.course.ui.system.GlassToaster.show("底栏最多显示五个入口，请先关闭一个")
+                        }
+                    }
+                    NextButton("恢复默认底栏",Modifier.padding(16.dp)){registry.restoreDefaults()}
+                } }
                 item { NextGroup {
                     NextSwitch("减少动态效果", t.reduceMotion) { NextAppearance.update(t.copy(reduceMotion = it)) }
                     NextSwitch("触觉反馈", t.haptic) { NextAppearance.update(t.copy(haptic = it)) }

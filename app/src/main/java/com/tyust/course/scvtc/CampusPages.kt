@@ -465,7 +465,7 @@ fun NextProfile(revision: Int, onLogin: () -> Unit, onTools: () -> Unit, onSched
             item {
                 NextGroup {
                     NextRow("Epiphany 的赞赏码", "自愿支持维护") { donation = true }
-                    NextText("川职·知学 ${com.tyust.course.BuildConfig.VERSION_NAME}\n维护者：zwwd1\n非学校官方客户端", Modifier.padding(16.dp))
+                    NextText("璟 ${com.tyust.course.BuildConfig.VERSION_NAME}\n维护者：zwwd1\n非学校官方客户端", Modifier.padding(16.dp))
                 }
             }
         }

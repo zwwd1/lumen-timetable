@@ -154,6 +154,7 @@ import com.tyust.course.ui.system.glass.drawBlurred
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 
 class MainActivity : FragmentActivity() {
+    private val offerSchoolConnection = kotlinx.coroutines.flow.MutableStateFlow(false)
     override fun onResume(){super.onResume();com.tyust.course.scvtc.ScvtcWebSession.foreground=java.lang.ref.WeakReference(this)}
     override fun onPause(){if(com.tyust.course.scvtc.ScvtcWebSession.foreground.get()===this)com.tyust.course.scvtc.ScvtcWebSession.foreground=java.lang.ref.WeakReference(null);super.onPause()}
 
@@ -193,6 +194,7 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             com.tyust.course.scvtc.NextTheme {
+                val offerConnection by offerSchoolConnection.collectAsState()
                 var showOnboarding by remember { mutableStateOf(firstInstall && !hasSeenOnboarding && !needsConnectionGuide && !userManager.isDemoMode) }
                 // 开源版授权检查不会拒绝设备，先呈现真实内容，再完成兼容检查。
                 var activationState by remember { mutableIntStateOf(2) }
@@ -219,13 +221,18 @@ class MainActivity : FragmentActivity() {
                     }
 
                     else -> {
-                        MainScreen(fragmentActivity = this@MainActivity)
+                        MainScreen(fragmentActivity = this@MainActivity, showSchoolConnection=offerConnection,
+                            onSchoolConnectionChoice={ connect ->
+                                prefs.edit().putBoolean("scvtc-login-offered",true).putBoolean(KEY_HAS_SEEN_ONBOARDING,true).apply()
+                                offerSchoolConnection.value=false
+                                if(connect)startActivity(Intent(this@MainActivity,LoginActivity::class.java).putExtra(LoginActivity.EXTRA_RETURN_TO_CALLER,true))
+                            })
                     }
                 }
                 com.tyust.course.ui.screen.UsageNotice()
             }
         }
-        if (savedInstanceState == null && needsConnectionGuide && !userManager.isDemoMode) lifecycleScope.launch {
+        if (needsConnectionGuide && !userManager.isDemoMode) lifecycleScope.launch {
             val hasAccount = userManager.savedAccounts.isNotEmpty() || userManager.studentId.orEmpty().isNotBlank() ||
                 com.tyust.course.scvtc.ScvtcRuntime.account.isNotBlank()
             val hasRecords = try { com.tyust.course.scvtc.ScvtcRuntime.hasLocalRecords() }
@@ -234,9 +241,8 @@ class MainActivity : FragmentActivity() {
                 android.widget.Toast.makeText(this@MainActivity,"本机记录尚未读取完成，请稍后再连接教务",android.widget.Toast.LENGTH_LONG).show()
                 return@launch
             }
-            prefs.edit().putBoolean("scvtc-login-offered", true).putBoolean(KEY_HAS_SEEN_ONBOARDING, true).apply()
-            if (!hasAccount && !hasRecords) startActivity(Intent(this@MainActivity, LoginActivity::class.java)
-                .putExtra(LoginActivity.EXTRA_RETURN_TO_CALLER, true))
+            if (!hasAccount && !hasRecords) offerSchoolConnection.value=true
+            else prefs.edit().putBoolean("scvtc-login-offered", true).putBoolean(KEY_HAS_SEEN_ONBOARDING, true).apply()
         }
     }
     override fun onNewIntent(intent: Intent) {
@@ -268,7 +274,7 @@ sealed class BottomNavItem(
 }
 
 @Composable
-fun MainScreen(fragmentActivity: FragmentActivity) {
+fun MainScreen(fragmentActivity: FragmentActivity,showSchoolConnection:Boolean=false,onSchoolConnectionChoice:(Boolean)->Unit={}) {
     val context = LocalContext.current
     val appWallpaper = com.tyust.course.ui.theme.rememberAppWallpaperStyle()
     val isDemoMode = remember { UserManager.getInstance().isDemoMode }
@@ -727,6 +733,12 @@ fun MainScreen(fragmentActivity: FragmentActivity) {
               com.tyust.course.scvtc.NextProfile(schoolRevision,onLogin={fragmentActivity.startActivity(Intent(fragmentActivity,LoginActivity::class.java))},onTools={campusTools=true},onSchedule={com.tyust.course.scvtc.CampusNavigation.request.value="schedule-settings"},onBack=close)
             }
             if(campusTools)com.tyust.course.ui.system.GlassSubpage(onDismiss={campusTools=false}){close->Column{com.tyust.course.scvtc.NextButton("返回",Modifier.statusBarsPadding().padding(12.dp),close);Box(Modifier.weight(1f)){com.tyust.course.scvtc.NextFileTools{fragmentActivity.startActivity(Intent(fragmentActivity,com.tyust.course.scvtc.ScvtcWebActivity::class.java))}}}}
+            if(showSchoolConnection) SystemDialog(
+                onDismissRequest={onSchoolConnectionChoice(false)},
+                title={Text("连接一次，课表随行",style=MaterialTheme.typography.titleLarge)},
+                confirmButton={SystemPrimaryButton("连接川职教务",{onSchoolConnectionChoice(true)},Modifier.fillMaxWidth())},
+                dismissButton={SystemSecondaryButton("稍后",{onSchoolConnectionChoice(false)},Modifier.fillMaxWidth())}
+            ) { Text("使用四川职业技术学院账号。密码按账号加密保存在本机，过期后自动恢复。也可以稍后在设置中连接。") }
             DialogHost(
                 state = dialogHostState,
                 modifier = Modifier.fillMaxSize()
@@ -761,7 +773,7 @@ fun MainScreen(fragmentActivity: FragmentActivity) {
                 )
             }
 
-            if (!session.expired && showStarDialog && !updateState.showDialog()) {
+            if (!showSchoolConnection && !session.expired && showStarDialog && !updateState.showDialog()) {
                 val dialogTitle = when (dismissCount) {
                     0 -> "在 GitHub 上支持这个项目"
                     1 -> "一个 Star，就是最好的反馈"

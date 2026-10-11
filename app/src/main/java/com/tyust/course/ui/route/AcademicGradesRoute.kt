@@ -164,8 +164,13 @@ private fun AcademicGradesContent(school: SchoolConfig, account: String, provide
         if (catalog != null && revision == 0) return@LaunchedEffect
         catalogError = ""; catalogLoading = true
         try {
-            if (com.tyust.course.academic.plugin.AcademicProviderRegistry.hasCapability(school, "study.terms")) {
-                val loaded = withContext(Dispatchers.IO) { AcademicStudyBridge.reader(school, account, expectedSession).catalog() }
+            if (school.id == "scvtc" || com.tyust.course.academic.plugin.AcademicProviderRegistry.hasCapability(school, "study.terms")) {
+                val loaded = if (school.id == "scvtc" && revision == 0) {
+                    val current = com.tyust.course.scvtc.ScvtcRuntime.semester
+                    val ids = (report.grades.map { it.term } + com.tyust.course.scvtc.ScvtcRuntime.cachedSemesters() + current)
+                        .filter { it.isNotBlank() }.distinct().sortedDescending()
+                    AcademicStudyCatalog(ids.map { AcademicTerm(it) }, AcademicTerm(current))
+                } else withContext(Dispatchers.IO) { AcademicStudyBridge.reader(school, account, expectedSession).catalog() }
                 if (sessions.isCurrent(expectedSession)) catalog = loaded
             }
         } catch (e: CancellationException) { throw e }
@@ -178,7 +183,17 @@ private fun AcademicGradesContent(school: SchoolConfig, account: String, provide
         overallLoading = true; overallError = ""
         try {
             val loaded = withContext(Dispatchers.IO) { AcademicStudyBridge.reader(school, account, expectedSession).grades() }
-            if (sessions.isCurrent(expectedSession)) { report = loaded; reportLoaded = true }
+            if (sessions.isCurrent(expectedSession)) {
+                report = loaded; reportLoaded = true
+                if (school.id == "scvtc") {
+                    val ids = (loaded.grades.map { it.term } + terms.map { it.id } + semester)
+                        .filter { it.isNotBlank() }.distinct()
+                    termReports = ids.associateWith { loaded.forSemester(it) }
+                    val current = com.tyust.course.scvtc.ScvtcRuntime.semester
+                    catalog = AcademicStudyCatalog((ids + current).distinct().sortedDescending().map { AcademicTerm(it) }, AcademicTerm(current))
+                    error = ""; refreshTerm = null
+                }
+            }
         } catch (e: CancellationException) { throw e }
         catch (e: Exception) { if (sessions.isCurrent(expectedSession)) overallError = loadError(e) }
         finally { if (sessions.isCurrent(expectedSession)) overallLoading = false }
@@ -202,8 +217,14 @@ private fun AcademicGradesContent(school: SchoolConfig, account: String, provide
             (reportLoaded || overallError.isNotBlank()) -> overallError.ifBlank { "学校暂未返回此学期，请刷新学期列表或重新选择" }
         else -> ""
     }
-    LaunchedEffect(semester, selectedTerm != null, termRevision, session.token, cacheReady) {
+    LaunchedEffect(semester, selectedTerm != null, termRevision, session.token, cacheReady, report, reportLoaded) {
         if (!cacheReady) return@LaunchedEffect
+        if (school.id == "scvtc") {
+            // The school returns all semesters in one paged report. Term selection is local.
+            if (reportLoaded && semester.isNotBlank()) termReports = termReports + (semester to report.forSemester(semester))
+            loading = false
+            return@LaunchedEffect
+        }
         if (semester.isBlank() || 0 !in supportedTabs || selectedTerm == null) { loading = false; return@LaunchedEffect }
         val requested = semester
         if (termReports.containsKey(requested) && refreshTerm != requested) { loading = false; return@LaunchedEffect }
@@ -247,7 +268,7 @@ private fun AcademicGradesContent(school: SchoolConfig, account: String, provide
         initialValue = com.tyust.course.ui.screen.OverallStatsUi("--", "--", 0, 0, 0, 0, 0), report
     ) { value = withContext(Dispatchers.Default) { AcademicStudyBridge.stats(report) } }
     com.tyust.course.ui.system.ReportPageContent(report.grades.isNotEmpty() || semesterGrades.isNotEmpty() || exams.isNotEmpty())
-    com.tyust.course.ui.system.ReportInitialPageReady(when (tab) {
+    com.tyust.course.ui.system.ReportInitialPageReady(if (school.id == "scvtc") cacheReady else when (tab) {
         1 -> reportLoaded || overallError.isNotBlank()
         2 -> examsLoaded || examError.isNotBlank()
         else -> termReports.containsKey(semester) || error.isNotBlank() || selectionError.isNotBlank() ||
@@ -256,11 +277,11 @@ private fun AcademicGradesContent(school: SchoolConfig, account: String, provide
     GradesScreen(currentTab = tab, onTabChange = ::chooseTab,
         semesterGrades = semesterGrades, semesters = semesterIds, semesterLabels = semesterLabels,
         currentSemester = semester, onSemesterChange = { semesterChosen = true; chooseTerm(it, semesterLabels[it].orEmpty()); error = "" },
-        semesterIsLoading = loading || (selectedTerm == null && catalogLoading) || (terms.isEmpty() && overallLoading), overallGrades = overallGrades,
+        semesterIsLoading = if (school.id == "scvtc") !cacheReady || overallLoading else loading || (selectedTerm == null && catalogLoading) || (terms.isEmpty() && overallLoading), overallGrades = overallGrades,
         overallStats = overallStats, overallIsLoading = overallLoading,
         examList = exams, examIsLoading = examLoading,
-        onRefresh = { when (tab) { 2 -> { examsLoaded = false; examRevision++ }; 1 -> overallRevision++; else -> { refreshTerm = semester; revision++; termRevision++ } } },
-        semesterError = selectionError.ifBlank { error }.ifBlank { if (terms.isEmpty()) catalogError.ifBlank { overallError } else "" },
+        onRefresh = { when (tab) { 2 -> { examsLoaded = false; examRevision++ }; 1 -> overallRevision++; else -> { if (school.id == "scvtc") overallRevision++ else { refreshTerm = semester; revision++; termRevision++ } } } },
+        semesterError = if (school.id == "scvtc") overallError else selectionError.ifBlank { error }.ifBlank { if (terms.isEmpty()) catalogError.ifBlank { overallError } else "" },
         overallError = overallError, examError = examError,
         onExportGrades = { exportAcademicGrades(context, it) }, supportedTabs = supportedTabs,
         onOpenOfficialExams = if (school.id == "scvtc") ({ context.startActivity(Intent(context, com.tyust.course.scvtc.ScvtcWebActivity::class.java).putExtra("module", "exams")) }) else null,

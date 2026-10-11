@@ -102,7 +102,7 @@ object UpdateManifestVerifier {
     fun key(encoded: String): PublicKey = KeyFactory.getInstance("EC").generatePublic(
         X509EncodedKeySpec(encoded.decodeBase64()?.toByteArray() ?: error("Invalid public key")))
 
-    fun verify(text: String, keys: Map<String, PublicKey>, channel: String): UpdateManifest {
+    fun verify(text: String, keys: Map<String, PublicKey>, channel: String, preferredAbis: List<String> = emptyList()): UpdateManifest {
         try {
             val envelope = UpdateJson.parse(text)
             require(envelope.get("schemaVersion") is Number && envelope.getLong("schemaVersion") == 2L)
@@ -124,7 +124,7 @@ object UpdateManifestVerifier {
             require(p.getString("packageName") == "cn.scvtc.campus.next")
             val code = integer("versionCode", 1, Int.MAX_VALUE.toLong()).toInt()
             val name = p.getString("versionName"); require(name.matches(Regex("[0-9]+\\.[0-9]+\\.[0-9]+")))
-            val sha = p.getString("sha256"); require(sha.matches(Regex("[a-f0-9]{64}")))
+            var sha = p.getString("sha256"); require(sha.matches(Regex("[a-f0-9]{64}")))
             val source = p.getString("sourceSha"); require(source.matches(Regex("[a-f0-9]{40}")))
             val build = p.getString("buildId"); require(build.matches(Regex("[0-9]{1,24}")))
             val published = p.getString("publishedAt"); require(published.matches(Regex("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z")))
@@ -132,15 +132,41 @@ object UpdateManifestVerifier {
             require(p.get("forceUpdate") is Boolean)
             val mirrors = p.getJSONArray("mirrors"); require(mirrors.length() in 1..8)
             val ids = mutableSetOf<String>()
-            val entries = (0 until mirrors.length()).map { i ->
+            var entries = (0 until mirrors.length()).map { i ->
                 val m = mirrors.getJSONObject(i); val id = m.getString("id"); val label = m.getString("name")
                 require(id.matches(Regex("[a-z0-9-]{1,32}")) && ids.add(id) && label.length in 1..40)
                 val url = m.getString("url"); require(validUrl(url))
                 UpdateMirror(id, label, url)
             }
+            var size=integer("size",1,512L*1024*1024)
+            // ABI-specific files belong to the signed payload. Existing clients
+            // continue to read the universal artifact at the top level.
+            val artifacts=p.optJSONArray("artifacts")
+            val variants=linkedMapOf<String,Triple<Long,String,List<UpdateMirror>>>()
+            if(artifacts!=null) {
+                require(artifacts.length() in 1..4)
+                for(i in 0 until artifacts.length()) {
+                    val item=artifacts.getJSONObject(i);val abi=item.getString("abi")
+                    require(abi in setOf("arm64-v8a","armeabi-v7a","x86","x86_64") && abi !in variants)
+                    val bytes=item.get("size");require(bytes is Long || bytes is Int)
+                    val count=(bytes as Number).toLong();require(count in 1..512L*1024*1024)
+                    val digest=item.getString("sha256");require(digest.matches(Regex("[a-f0-9]{64}")))
+                    val links=item.getJSONArray("mirrors");require(links.length() in 1..8)
+                    val linkIds=mutableSetOf<String>()
+                    val parsed=(0 until links.length()).map { j ->
+                        val m=links.getJSONObject(j);val id=m.getString("id");val label=m.getString("name");val url=m.getString("url")
+                        require(id.matches(Regex("[a-z0-9-]{1,32}")) && linkIds.add(id) && label.length in 1..40 && validUrl(url))
+                        UpdateMirror(id,label,url)
+                    }
+                    variants[abi]=Triple(count,digest,parsed)
+                }
+                preferredAbis.firstOrNull { it in variants }?.let { abi ->
+                    val selected=variants.getValue(abi);size=selected.first;sha=selected.second;entries=selected.third
+                }
+            }
             return UpdateManifest(channel, integer("revision", 1, Long.MAX_VALUE), p.getString("packageName"),
                 code, name, integer("minSdk", 24, 1000).toInt(), notes, p.getBoolean("forceUpdate"),
-                integer("size", 1, 512L * 1024 * 1024), sha, entries, source, build, published, text)
+                size, sha, entries, source, build, published, text)
         } catch (e: UpdateFailure) { throw e }
         catch (_: Exception) { updateError("MANIFEST_INVALID", "更新清单无效或不兼容") }
     }

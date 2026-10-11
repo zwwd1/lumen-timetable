@@ -88,14 +88,16 @@ object ScvtcRuntime {
    try {
     val student=networkMutex.withLock {
      val memory=cn.scvtc.campus.OfficialLoginMemory(context)
+     memory.rememberInput(a,password)
      val api=cn.scvtc.campus.JwxtApi(headers={memory.apiHeaders(a,it)})
-     val verified=cn.scvtc.campus.CasAuthManager(context,api).signIn(a,password)
-     val calendar=api.calendar().first
-     withContext(Dispatchers.Main) {
-      confirm(verified.account,calendar.semester)
-      registerVerifiedIdentity(verified.account,calendar.semester,
-       listOf("studentName","name","xm","姓名").firstNotNullOfOrNull{verified.fields[it]?.takeIf(String::isNotBlank)}.orEmpty())
-      revision.value++
+     val verified=cn.scvtc.campus.CasAuthManager(context,api).signIn(a,password) { student ->
+      val calendar=api.calendar().first
+      withContext(Dispatchers.Main) {
+       confirm(student.account,calendar.semester)
+       registerVerifiedIdentity(student.account,calendar.semester,
+        listOf("studentName","name","xm","姓名").firstNotNullOfOrNull{student.fields[it]?.takeIf(String::isNotBlank)}.orEmpty())
+       revision.value++
+      }
      }
      verified
     }
@@ -144,7 +146,7 @@ object ScvtcRuntime {
  fun refreshService(module:String){
   serviceRead(listOf(module))
  }
- fun refreshAcademics(){serviceRead(listOf("grades","credits"))}
+ fun refreshAcademics(){refreshService("grades");refreshService("credits")}
  /** Awaiting a shared application task never ties its network/save work to a page. */
  private fun serviceRead(modules:List<String>):Deferred<Map<String,Extraction>> = synchronized(jobLock){
   val a=account;val t=semester;val key="$a|$t|${modules.sorted().joinToString(",")}"
@@ -348,6 +350,9 @@ object ScvtcRuntime {
   }
   }catch(e:CancellationException){progress.phase(NativeSyncStage.CACHE,"已停止 · 使用本机缓存");throw e}
   catch(e:Exception){progress.failure(e);throw e}
+ }
+ fun cachedSemesters():List<String> = org.json.JSONArray(prefs.getString("officialTerms:$account","[]")).let { list ->
+  (0 until list.length()).map { list.getString(it) }
  }
  suspend fun officialSemesters():List<String> = networkMutex.withLock {
   val a=account;val t=semester;require(a.isNotBlank()&&t.isNotBlank())

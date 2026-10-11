@@ -29,6 +29,19 @@ class OfficialLoginMemory(private val context:Context) {
         true
     }.getOrDefault(false)
     fun configured(account:String):Boolean=prefs.getString(account,null)?.let{open(account,it)}!=null
+    /** Native form input is remembered separately from verified CAS credentials. */
+    fun rememberInput(account:String,password:String) {
+        require(account.matches(Regex("[0-9]{6,20}")) && password.length in 1..512)
+        check(prefs.edit().putString("input:$account",seal("input:$account",
+            JSONObject().put("username",account).put("password",password).toString()))
+            .putString("last-input",seal("native-input:last",JSONObject().put("username",account).toString())).commit())
+    }
+    fun lastInputAccount():String=prefs.getString("last-input",null)?.let { open("native-input:last",it) }?.optString("username").orEmpty()
+    fun inputPassword(account:String):String {
+        val input=prefs.getString("input:$account",null)?.let { open("input:$account",it) }
+            ?:prefs.getString(account,null)?.let { open(account,it) }
+        return input?.takeIf { it.optString("username")==account }?.optString("password").orEmpty()
+    }
     private fun enrollment(account:String):JSONObject? {
         val value=prefs.getString("enrollment:$account",null)?.let{open(account,it)}?:return null
         val age=System.currentTimeMillis()-value.optLong("capturedAt",0)
@@ -183,11 +196,14 @@ class OfficialLoginMemory(private val context:Context) {
             prefs.edit().remove("pending:$account").remove("attempt:$account").apply();recoveringPage=""
             // Fill a human-challenge form, but only report automatic submission
             // when the official submit handler can actually be invoked.
-            web.evaluateJavascript("Boolean(window.__officialLoginMemory?.matches($binding))"){canSubmit->
-            web.evaluateJavascript("window.__officialLoginMemory?.configure($binding,${JSONObject.quote(account)},${JSONObject.quote(password)})"){value->
+            web.evaluateJavascript("window.__officialLoginMemory?.configure($binding,${JSONObject.quote(account)},${JSONObject.quote(password)},false)"){value->
                 if(value!="true")prefs.edit().remove("enrollment:$account").apply()
-                onResult(value=="true" && canSubmit=="true")
-            }
+                if(value!="true"){onResult(false);return@evaluateJavascript}
+                // Vue updates the submit button after input events, on its next render.
+                web.postDelayed({
+                    if(web.url!=page){onResult(false);return@postDelayed}
+                    web.evaluateJavascript("window.__officialLoginMemory?.restore($binding,${JSONObject.quote(account)},${JSONObject.quote(password)})"){submitted->onResult(submitted=="true")}
+                },100)
             }
         }
     }
@@ -202,7 +218,7 @@ class OfficialLoginMemory(private val context:Context) {
     private fun awaitForm(web:WebView,onResult:(Boolean)->Unit) {
         val page=web.url.orEmpty()
         if(!trusted(page)){onResult(false);return}
-        var probes=0
+        val deadline=android.os.SystemClock.elapsedRealtime()+30_000
         // CAS is a SPA: document load is earlier than its visible form mounting.
         // Wait for a recognisable form without sending credentials or clicking.
         fun ready(){
@@ -211,7 +227,7 @@ class OfficialLoginMemory(private val context:Context) {
             web.evaluateJavascript("!!window.__officialLoginMemory?.describe()"){result->
                 if(web.url!=page)onResult(false)
                 else if(result=="true")onResult(true)
-                else if(++probes<20)web.postDelayed({ready()},400)
+                else if(android.os.SystemClock.elapsedRealtime()<deadline)web.postDelayed({ready()},400)
                 else onResult(false)
             }
         }
@@ -246,7 +262,8 @@ class OfficialLoginMemory(private val context:Context) {
     }
     fun forget(account:String){
         recoveringPage="";usedH5Entry=false
-        val edit=prefs.edit().remove("enrollment:$account").remove(account).remove("attempt:$account").remove("pending:$account").remove("session:$account")
+        val edit=prefs.edit().remove("input:$account").remove("enrollment:$account").remove(account).remove("attempt:$account").remove("pending:$account").remove("session:$account")
+        if(lastInputAccount()==account)edit.remove("last-input")
         prefs.all.keys.filter{it.startsWith("headers:$account:")}.forEach(edit::remove);edit.apply()
     }
 }

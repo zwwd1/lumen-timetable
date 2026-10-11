@@ -60,7 +60,7 @@ enum class WallpaperPreset(
     Sky("天蓝", Color(0xFFEAF1FB), Color(0xFFFFFFFF), Color(0xFF4F86C6), false),
     Graphite("石墨灰", Color(0xFF2C2C2E), Color(0xFF48484A), Color(0xFF000000), true),
     SpaceBlack("深空黑", Color(0xFF1C1C1E), Color(0xFF3A3A3C), Color(0xFF000000), true),
-    CampusLake("川职月光", Color(0xFF172C53), Color(0xFF638DC0), Color(0xFF081226), true);
+    Quiet("留白", Color(0xFFF3F4F1), Color(0xFFF8F9F6), Color(0xFFB4C8D0), false);
 }
 
 /**
@@ -89,7 +89,8 @@ data class WallpaperStyle(
     val imageBlur: Float = 0f,
     val imageFocusX:Float=0.5f,
     val imageFocusY:Float=0.5f,
-    val imageZoom:Float=1f
+    val imageZoom:Float=1f,
+    val nightImage:ImageBitmap?=null
 )
 
 fun WallpaperPreset.toStyle(): WallpaperStyle =
@@ -220,7 +221,7 @@ object AppearanceSettingsManager {
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /** 最近一次选中的预设。自定义模式下它仍然保留，切回"预设"时不用重新挑。 */
-    var wallpaper by mutableStateOf(WallpaperPreset.CampusLake)
+    var wallpaper by mutableStateOf(WallpaperPreset.Quiet)
         private set
 
     /**
@@ -260,6 +261,7 @@ object AppearanceSettingsManager {
     private var imageSoft by mutableStateOf<ImageBitmap?>(null)
     private var imageToneMap by mutableStateOf<WallpaperToneMap?>(null)
     private var campusImage by mutableStateOf<ImageBitmap?>(null)
+    private var campusNightImage by mutableStateOf<ImageBitmap?>(null)
     private var campusToneMap: WallpaperToneMap? = null
 
     /**
@@ -296,7 +298,8 @@ object AppearanceSettingsManager {
         val stored = prefs?.getString(KEY_WALLPAPER, null)
         wallpaper = stored
             ?.let { name -> runCatching { WallpaperPreset.valueOf(name) }.getOrNull() }
-            ?: WallpaperPreset.CampusLake
+            ?: WallpaperPreset.Quiet
+        if (stored == "CampusLake") prefs?.edit()?.putString(KEY_WALLPAPER, WallpaperPreset.Quiet.name)?.apply()
         glassEffectEnabled = prefs?.getBoolean(KEY_GLASS_EFFECT, true) ?: true
         navBarAutoCollapseEnabled = prefs?.getBoolean(KEY_NAV_BAR_AUTO_COLLAPSE, true) ?: true
         customColor = prefs
@@ -319,10 +322,12 @@ object AppearanceSettingsManager {
         mode = resolveMode()
         recomputeStyle()
         ioScope.launch {
-            val bitmap = android.graphics.BitmapFactory.decodeResource(app.resources, com.tyust.course.R.drawable.campus_glass_wallpaper,
+            val bitmap = android.graphics.BitmapFactory.decodeResource(app.resources, com.tyust.course.R.drawable.default_wallpaper_light,
+                android.graphics.BitmapFactory.Options().apply { inScaled = false; inSampleSize = 2 })
+            val night = android.graphics.BitmapFactory.decodeResource(app.resources, com.tyust.course.R.drawable.default_wallpaper_dark,
                 android.graphics.BitmapFactory.Options().apply { inScaled = false; inSampleSize = 2 })
             val map = WallpaperImageStore.analyzeBitmap(bitmap)
-            withContext(Dispatchers.Main) { campusImage = bitmap.asImageBitmap(); campusToneMap = map; recomputeStyle() }
+            withContext(Dispatchers.Main) { campusImage = bitmap.asImageBitmap(); campusNightImage = night.asImageBitmap(); campusToneMap = map; recomputeStyle() }
         }
         if (mode == WallpaperMode.Image) loadImageAsync()
         // 存量升级：旧版模糊层是 72px 裸缩略图（上采样像压缩画质），按高斯管道重生成一次
@@ -541,13 +546,13 @@ object AppearanceSettingsManager {
             WallpaperMode.Color -> customColor?.let { customWallpaperStyle(it) }
                 ?: wallpaper.toStyle()
             WallpaperMode.Preset -> wallpaper.toStyle().let {
-                if (wallpaper == WallpaperPreset.CampusLake) it.copy(image = campusImage) else it
+                if (wallpaper == WallpaperPreset.Quiet) it.copy(image = campusImage,nightImage=campusNightImage) else it
             }
         }
         toneMap = when (mode) {
             WallpaperMode.Image -> imageToneMap ?: WallpaperToneMap.uniform(imageColor.toArgb())
             WallpaperMode.Color -> WallpaperToneMap.uniform(style.baseColor.toArgb())
-            WallpaperMode.Preset -> if (wallpaper == WallpaperPreset.CampusLake) campusToneMap ?: WallpaperToneMap.uniform(style.baseColor.toArgb())
+            WallpaperMode.Preset -> if (wallpaper == WallpaperPreset.Quiet) campusToneMap ?: WallpaperToneMap.uniform(style.baseColor.toArgb())
                 else WallpaperToneMap.uniform(style.baseColor.toArgb())
         }
     }

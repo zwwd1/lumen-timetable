@@ -51,7 +51,7 @@
     // Observed CAS Vue login: inputs have no name/id and .login-button is outside
     // the form. Use that exact verified page adapter, preserving its own handler.
     const schoolCas=location.origin==='https://cas.scvtc.edu.cn'&&location.pathname==='/cas/WEB/index.html';
-    const buttons = [...scope.querySelectorAll(h5 ? '.info-button > button.button-item' : 'button,input[type=submit]'),...(schoolCas?[...document.querySelectorAll('.login-button')]:[])].filter(e => visible(e) && !e.disabled && e.getAttribute('aria-disabled') !== 'true' && !e.classList.contains('ivu-btn-loading') &&
+    const buttons = [...scope.querySelectorAll(h5 ? '.info-button > button.button-item' : 'button,input[type=submit]'),...(schoolCas?[...document.querySelectorAll('.login-button')]:[])].filter(e => visible(e) && (allowHuman || (!e.disabled && e.getAttribute('aria-disabled') !== 'true' && !e.classList.contains('ivu-btn-loading'))) &&
       (e.type === 'submit' || /^(登\s*录|login|sign\s*in)$/i.test((e.textContent || e.value || '').trim())));
     if (buttons.length !== 1) return null;
     const button = buttons[0], username = users[0];

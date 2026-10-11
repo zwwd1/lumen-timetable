@@ -111,16 +111,22 @@ fun LoginScreen(
     var username by rememberSaveable { mutableStateOf("") }
     var password by form::password
     if (selectedSchoolId == "scvtc" && onPasswordLogin != null) {
+        val inputContext = androidx.compose.ui.platform.LocalContext.current
+        val loginMemory = remember(inputContext) { cn.scvtc.campus.OfficialLoginMemory(inputContext) }
         LaunchedEffect(loginContextRevision) {
             form.selectContext("scvtc:" + loginContextRevision, cookieValue)
             if (username.isBlank()) username = com.tyust.course.scvtc.ScvtcRuntime.account
-                .ifBlank { UserManager.getInstance().studentId.orEmpty() }
+                .ifBlank { UserManager.getInstance().studentId.orEmpty() }.ifBlank { loginMemory.lastInputAccount() }
+            if (password.isBlank()) password = loginMemory.inputPassword(username)
         }
         ScvtcAccountLogin(
             account = username, password = password, busy = isLoading, error = errorMessage,
-            onAccount = { username = it.trim() }, onPassword = { password = it },
+            onAccount = { username = it.trim(); password = loginMemory.inputPassword(username) }, onPassword = { password = it },
             onSubmit = { onPasswordLogin(username, password) },
-            onAuthentication = { onSchoolAuthentication?.invoke(username) ?: onOpenWebView() },
+            onAuthentication = {
+                if (password.isNotEmpty()) loginMemory.rememberInput(username, password)
+                onSchoolAuthentication?.invoke(username) ?: onOpenWebView()
+            },
             onBack = onBack
         )
         return
@@ -699,17 +705,15 @@ private fun ScvtcAccountLogin(
     com.tyust.course.ui.system.GlassPageScaffold(
         title = "连接川职教务", subtitle = "四川职业技术学院", onBack = onBack
     ) { insets ->
-        Box(Modifier.fillMaxSize().padding(insets).imePadding(), contentAlignment = Alignment.TopCenter) {
-            Column(Modifier.widthIn(max = 560.dp).fillMaxWidth().fillMaxHeight()
-                .verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("输入一次，后续自动同步", style = MaterialTheme.typography.titleLarge)
-                    Text("使用学校统一认证的账号。登录后先显示课表，成绩与学分在后台读取。",
-                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                com.tyust.course.ui.system.InsetGroupedSection {
+        Box(Modifier.fillMaxSize().padding(insets).consumeWindowInsets(insets).imePadding(), contentAlignment = Alignment.TopCenter) {
+            Column(Modifier.widthIn(max = 560.dp).fillMaxSize()
+                .verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                com.tyust.course.ui.system.InsetGroupedSection(
+                    footer = "已开启记住密码。输入按账号加密保存在本机；会话到期后自动恢复，不写入普通导出或云端。"
+                ) {
                     Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                        Text("连接一次，课表随行", style = MaterialTheme.typography.titleMedium)
                         com.tyust.course.ui.system.GlassFormField(account, onAccount, "学号", enabled = !busy,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number,
                                 imeAction = androidx.compose.ui.text.input.ImeAction.Next))
@@ -728,14 +732,12 @@ private fun ScvtcAccountLogin(
                         }
                     }
                 }
-                Text("密码仅加密保存在这部手机。会话到期后自动恢复，不会写入导出文件或云端。",
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                com.tyust.course.ui.system.InsetGroupedSection(footer = "学校要求验证码或二次认证时，在官方页面完成后继续。登录完成后先保存课表，再读取成绩。") {
                 SystemSecondaryButton("打开学校认证页", {
                     if (account.matches(Regex("[0-9]{6,20}"))) { localError = null; focus.clearFocus(); onAuthentication() }
                     else localError = "请先填写学号"
-                }, Modifier.fillMaxWidth(), enabled = !busy)
-                Text("学校出现验证码或二次认证时，可在认证页完成后继续。",
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }, Modifier.fillMaxWidth().padding(12.dp), enabled = !busy)
+                }
                 Spacer(Modifier.height(8.dp))
             }
         }
