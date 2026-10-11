@@ -2,17 +2,17 @@
   "schemaVersion": 2,
   "name": "璟",
   "builtAtDate": "2026-10-11",
-  "sourceCommit": "8c8be0114765a260db93eadff4c39d64325fb478",
-  "sourceTree": "b082f75583c2f8e1e109ccfd9baa7901e9519498",
+  "sourceCommit": "c6b60b92d14a9046a5e67efb4040897618d8ca37",
+  "sourceTree": "a9797625b59e4499a90829c4b33fe0945dd4559f",
   "sourceRepository": "https://github.com/zwwd1/scvtc-zhixue",
   "productionInputsUnchangedAfterBuild": true,
   "artifact": {
-    "file": "scvtc-zhixue-1.2.5.apk",
-    "sha256": "12bbafa55665f1563f554da80349246041cb633cc9daa18dc8382cca7b4488c8",
-    "size": 30606929,
+    "file": "scvtc-zhixue-1.2.6.apk",
+    "sha256": "f953d265cf33a0d6f4ccc6c721a2b9234b7eb6ea7a355bbc7e3db96ce6ef0fe2",
+    "size": 30611221,
     "packageName": "cn.scvtc.campus.next",
-    "versionName": "1.2.5",
-    "versionCode": 14,
+    "versionName": "1.2.6",
+    "versionCode": 15,
     "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
     "nativeLibraryCount": 12,
     "abi": "universal",
@@ -38,30 +38,30 @@
   "functionalTests": "not_run_at_user_request",
   "deviceTests": "not_run_at_user_request",
   "sourceArchive": {
-    "sha256": "202f6fef8cec6b21dd00a02672e6931abebe9cd404255084bd689fccbdc5adc4",
-    "bytes": 15903176,
-    "fileCount": 1066,
+    "sha256": "08446ddd5c2069a2425a089beabbb3a4c30b7d99ea6e8d617c552312cf970155",
+    "bytes": 15910331,
+    "fileCount": 1069,
     "matchesSourceCommit": true
   },
   "additionalBuildInputs": {
     "originalDonationPngSha256": "8ebf7c9b12fbe2917878bad2be227a24987b700a1859177ae63be9bc1bd86ce5"
   },
   "r8Mapping": {
-    "id": "fd34d42de24aa27d2b09f72b4419fce122f90f4128c1090cd5186981d6db289f",
-    "sha256": "646da8ec140f34234cff9e21c86f7a56aa85e77f9694a9dc28c58fc9126ddf01"
+    "id": "4fa9561e53a168fcdfcaace3d06dc899bf7a05025c2a18707049aafd0106dc11",
+    "sha256": "06a2c68920fba80653b513c5c28a9842792619a9b4c5a138812280881983a935"
   },
-  "expectedReleaseUrl": "https://github.com/zwwd1/scvtc-zhixue/releases/tag/v1.2.5",
-  "releasePublicationStatus": "published",
+  "expectedReleaseUrl": "https://github.com/zwwd1/scvtc-zhixue/releases/tag/v1.2.6",
+  "releasePublicationStatus": "pending",
   "cloudServicesPaused": true,
   "report": "VERIFICATION.md",
   "additionalArtifacts": [
     {
-      "file": "scvtc-zhixue-1.2.5-arm64-v8a.apk",
-      "sha256": "c8ef633a0bd822dc3a33b2743a751ff7dc27ad16acc010dc5e97d107eb7e499d",
-      "size": 18439061,
+      "file": "scvtc-zhixue-1.2.6-arm64-v8a.apk",
+      "sha256": "6e7d49ffec100157855d6fa2f18ed8c95bfcbafc593a4a82280fbc77a93f5e77",
+      "size": 18443353,
       "packageName": "cn.scvtc.campus.next",
-      "versionName": "1.2.5",
-      "versionCode": 14,
+      "versionName": "1.2.6",
+      "versionCode": 15,
       "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
       "nativeLibraryCount": 3,
       "abi": "arm64-v8a",
@@ -82,12 +82,12 @@
       }
     },
     {
-      "file": "scvtc-zhixue-1.2.5-platform.apk",
-      "sha256": "2ef1660104fb9d5e751028749b73137a6a0aa837687dfd97686266fea148a25d",
-      "size": 332669951,
+      "file": "scvtc-zhixue-1.2.6-platform.apk",
+      "sha256": "5a841e5dca196d53b7107be2fff8361c2e35adf59e48b9b15e7c8ce8861f22da",
+      "size": 332676399,
       "packageName": "cn.scvtc.campus.next",
-      "versionName": "1.2.5",
-      "versionCode": 14,
+      "versionName": "1.2.6",
+      "versionCode": 15,
       "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
       "nativeLibraryCount": 59,
       "abi": "universal",
@@ -108,12 +108,12 @@
       }
     },
     {
-      "file": "scvtc-zhixue-1.2.5-platform-arm64-v8a.apk",
-      "sha256": "8c5a9a53b5e134f855686c03a2836ae6ae9f958c4712305c76d6c5261b463bd5",
-      "size": 129834068,
+      "file": "scvtc-zhixue-1.2.6-platform-arm64-v8a.apk",
+      "sha256": "3170c2e397fbcb3784fcf4d769ef506b1c2981e445ced4ba09af8340d4e3d786",
+      "size": 129840516,
       "packageName": "cn.scvtc.campus.next",
-      "versionName": "1.2.5",
-      "versionCode": 14,
+      "versionName": "1.2.6",
+      "versionCode": 15,
       "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
       "nativeLibraryCount": 18,
       "abi": "arm64-v8a",
@@ -133,46 +133,5 @@
         "r8Mapping": true
       }
     }
-  ],
-  "publicRelease": {
-    "url": "https://github.com/zwwd1/scvtc-zhixue/releases/tag/v1.2.5",
-    "tag": "v1.2.5",
-    "publishedAt": "2026-10-11T10:20:21Z",
-    "sourceTagCommit": "8c8be0114765a260db93eadff4c39d64325fb478",
-    "publisherCommit": "75e79be001d053cc701079fb7bd5b243f349745d",
-    "workflowRuns": [
-      {
-        "id": 38131381852,
-        "jobId": 114446252446,
-        "conclusion": "success",
-        "url": "https://github.com/zwwd1/scvtc-zhixue/actions/runs/38131381852"
-      }
-    ],
-    "assets": [
-      {
-        "name": "scvtc-zhixue-1.2.5-arm64-v8a.apk",
-        "size": 18439061,
-        "sha256": "c8ef633a0bd822dc3a33b2743a751ff7dc27ad16acc010dc5e97d107eb7e499d",
-        "url": "https://github.com/zwwd1/scvtc-zhixue/releases/download/v1.2.5/scvtc-zhixue-1.2.5-arm64-v8a.apk"
-      },
-      {
-        "name": "scvtc-zhixue-1.2.5-platform-arm64-v8a.apk",
-        "size": 129834068,
-        "sha256": "8c5a9a53b5e134f855686c03a2836ae6ae9f958c4712305c76d6c5261b463bd5",
-        "url": "https://github.com/zwwd1/scvtc-zhixue/releases/download/v1.2.5/scvtc-zhixue-1.2.5-platform-arm64-v8a.apk"
-      },
-      {
-        "name": "scvtc-zhixue-1.2.5-platform.apk",
-        "size": 332669951,
-        "sha256": "2ef1660104fb9d5e751028749b73137a6a0aa837687dfd97686266fea148a25d",
-        "url": "https://github.com/zwwd1/scvtc-zhixue/releases/download/v1.2.5/scvtc-zhixue-1.2.5-platform.apk"
-      },
-      {
-        "name": "scvtc-zhixue-1.2.5.apk",
-        "size": 30606929,
-        "sha256": "12bbafa55665f1563f554da80349246041cb633cc9daa18dc8382cca7b4488c8",
-        "url": "https://github.com/zwwd1/scvtc-zhixue/releases/download/v1.2.5/scvtc-zhixue-1.2.5.apk"
-      }
-    ]
-  }
+  ]
 }

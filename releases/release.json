@@ -1,37 +1,37 @@
 {
   "repository": "zwwd1/scvtc-zhixue",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "name": "璟",
-  "sourceCommit": "8c8be0114765a260db93eadff4c39d64325fb478",
+  "sourceCommit": "c6b60b92d14a9046a5e67efb4040897618d8ca37",
   "artifact": {
-    "file": "scvtc-zhixue-1.2.5.apk",
+    "file": "scvtc-zhixue-1.2.6.apk",
     "packageName": "cn.scvtc.campus.next",
-    "versionCode": 14,
+    "versionCode": 15,
     "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
-    "size": 30606929,
-    "sha256": "12bbafa55665f1563f554da80349246041cb633cc9daa18dc8382cca7b4488c8",
+    "size": 30611221,
+    "sha256": "f953d265cf33a0d6f4ccc6c721a2b9234b7eb6ea7a355bbc7e3db96ce6ef0fe2",
     "abi": "universal"
   },
   "parts": [
     {
-      "blob": "04c05cdc5a0a8cfac74e3ce26e88e361f8348547",
+      "blob": "e0d75f2fa66fa129bbd6eb84d4fb601de8073876",
       "size": 2097152,
-      "sha256": "22bdd1a1f965ff0ca1d9fc9c8423e269bea9bfea2b2be512d32ceab8b1590b99"
+      "sha256": "435614eec48c88833b011100e5177d0623f3736a538098da54de646f19d40bf3"
     },
     {
-      "blob": "7d3b3071d82b28e4708d3cc729e45854a801fff1",
+      "blob": "0ffae2091f6590228b6aab336d33b43c0fd865c4",
       "size": 2097152,
-      "sha256": "92b66fa417e38a4ee4614559363da2efdfc9f745ac1dca45930be55aabb30804"
+      "sha256": "be268590411cbcbf539e2fb717a82e85105062269516c105f85492bcc884a795"
     },
     {
-      "blob": "73fb9b3df9450268dba6df1b98e32729dbb6eed9",
+      "blob": "42a26acf93ce76219c08cdd22344f9ca0cf011d3",
       "size": 2097152,
-      "sha256": "365f01292637c7facfc2d5b8993dab31a56ba9c6dee17877163d4fef40798f70"
+      "sha256": "cce1b3abf200c694d5e03cca0af8e2e6c8d238148aa9f1975bcbacb5269ed7e4"
     },
     {
-      "blob": "e57d5779d48c06124a57a2ef04673c61d7a92ff3",
-      "size": 1706380,
-      "sha256": "fe38d20961ae6f085ab995b78126ea770ae4a4b5ae849d5430c33c2c33913010"
+      "blob": "bb450851b1d0a80844578835e5e3f50d4bc23dd5",
+      "size": 1710324,
+      "sha256": "b4391b8810ef7fac234e3da526d5774d847b9e37c1df7705f163eea6dfd63215"
     },
     {
       "blob": "2ce4814500c33bc122312202b91f667335274cbe",
@@ -74,14 +74,19 @@
       "sha256": "e398fc94914b088b3dac865c0c95854fd626a612a9dea44420ab3b6f0d7d3473"
     },
     {
-      "blob": "f929fe963b1e4eb73e5149b4a4e8a92680cf4a08",
+      "blob": "910490e84c31222f98a2867c66c99b749d25aada",
       "size": 2097152,
-      "sha256": "ab8107094914f8da1964e98ae00191d4cba493f4337c0df1b4ea23a6b75baf71"
+      "sha256": "2e11f0894308ea9468b0d744266b6057b104213654c73ba1f0d4d6904baff5a2"
     },
     {
-      "blob": "0de5ad01195b188de4e6327ae78464880875fa0b",
+      "blob": "d6be7eb7ead893f8d5c833fb10a73b84ba77b9ad",
       "size": 2097152,
-      "sha256": "874fba23a1da51483aff02181570e13d2619e8f3bbbcaef7f81a42f1232f03a6"
+      "sha256": "a7aded86b8598df2fe51df7d41e6c2e47c95a014b2af89fe945cc269ff13c6e6"
+    },
+    {
+      "blob": "2a3e701e2bc2e187ddc30350c2f1d5c962b0bdbf",
+      "size": 348,
+      "sha256": "e912f6ef7870aae5e89e31e896aaed018d4091e6e74ed51f1de6ab08f30b0059"
     },
     {
       "blob": "619daf4e7a5a872e741b82e34dae178a666cfb5f",
@@ -89,43 +94,43 @@
       "sha256": "2b8c14c1f053bb08b918c988b1d476d83cc82574946d618bbe7be4b426be472b"
     },
     {
-      "blob": "3cdea8c48f2a682b28627f3b088f6c99f5214587",
+      "blob": "1bea1e9eeb5b68944afa4103e6eceff43277f246",
       "size": 1892921,
-      "sha256": "1313f607502fe676668ac0845e41556202474c0c584bdd62a840335192cb8d1e"
+      "sha256": "bdd10b56efbcef126b7aab9aa5c8689e559dd92659ab4dd5438d04dc8deb7952"
     }
   ],
   "publisherRevision": 3,
   "additionalArtifacts": [
     {
       "artifact": {
-        "file": "scvtc-zhixue-1.2.5-arm64-v8a.apk",
+        "file": "scvtc-zhixue-1.2.6-arm64-v8a.apk",
         "packageName": "cn.scvtc.campus.next",
-        "versionCode": 14,
+        "versionCode": 15,
         "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
-        "size": 18439061,
-        "sha256": "c8ef633a0bd822dc3a33b2743a751ff7dc27ad16acc010dc5e97d107eb7e499d",
+        "size": 18443353,
+        "sha256": "6e7d49ffec100157855d6fa2f18ed8c95bfcbafc593a4a82280fbc77a93f5e77",
         "abi": "arm64-v8a"
       },
       "parts": [
         {
-          "blob": "04c05cdc5a0a8cfac74e3ce26e88e361f8348547",
+          "blob": "e0d75f2fa66fa129bbd6eb84d4fb601de8073876",
           "size": 2097152,
-          "sha256": "22bdd1a1f965ff0ca1d9fc9c8423e269bea9bfea2b2be512d32ceab8b1590b99"
+          "sha256": "435614eec48c88833b011100e5177d0623f3736a538098da54de646f19d40bf3"
         },
         {
-          "blob": "7d3b3071d82b28e4708d3cc729e45854a801fff1",
+          "blob": "0ffae2091f6590228b6aab336d33b43c0fd865c4",
           "size": 2097152,
-          "sha256": "92b66fa417e38a4ee4614559363da2efdfc9f745ac1dca45930be55aabb30804"
+          "sha256": "be268590411cbcbf539e2fb717a82e85105062269516c105f85492bcc884a795"
         },
         {
-          "blob": "73fb9b3df9450268dba6df1b98e32729dbb6eed9",
+          "blob": "42a26acf93ce76219c08cdd22344f9ca0cf011d3",
           "size": 2097152,
-          "sha256": "365f01292637c7facfc2d5b8993dab31a56ba9c6dee17877163d4fef40798f70"
+          "sha256": "cce1b3abf200c694d5e03cca0af8e2e6c8d238148aa9f1975bcbacb5269ed7e4"
         },
         {
-          "blob": "e57d5779d48c06124a57a2ef04673c61d7a92ff3",
-          "size": 1706380,
-          "sha256": "fe38d20961ae6f085ab995b78126ea770ae4a4b5ae849d5430c33c2c33913010"
+          "blob": "bb450851b1d0a80844578835e5e3f50d4bc23dd5",
+          "size": 1710324,
+          "sha256": "b4391b8810ef7fac234e3da526d5774d847b9e37c1df7705f163eea6dfd63215"
         },
         {
           "blob": "2ce4814500c33bc122312202b91f667335274cbe",
@@ -138,14 +143,19 @@
           "sha256": "41171f9c81011c7ecd898d7f93676a2b0c8492323e73051dc99ae2652bfd9fe0"
         },
         {
-          "blob": "45164b725e5d5cacebeb6f544a6ed2e444073121",
+          "blob": "0a15261ac6f1d08a646a6f11e53430eece956306",
           "size": 160380,
-          "sha256": "59699ecd2b477e2376fde9cee9f501aeb0a7a863abd3a73533a85945d759f8d6"
+          "sha256": "da0ac868c70e8a7df95a74fd543250d90dcd8d5d19e05d80502fc934ad639fba"
         },
         {
-          "blob": "0de5ad01195b188de4e6327ae78464880875fa0b",
+          "blob": "d6be7eb7ead893f8d5c833fb10a73b84ba77b9ad",
           "size": 2097152,
-          "sha256": "874fba23a1da51483aff02181570e13d2619e8f3bbbcaef7f81a42f1232f03a6"
+          "sha256": "a7aded86b8598df2fe51df7d41e6c2e47c95a014b2af89fe945cc269ff13c6e6"
+        },
+        {
+          "blob": "2a3e701e2bc2e187ddc30350c2f1d5c962b0bdbf",
+          "size": 348,
+          "sha256": "e912f6ef7870aae5e89e31e896aaed018d4091e6e74ed51f1de6ab08f30b0059"
         },
         {
           "blob": "619daf4e7a5a872e741b82e34dae178a666cfb5f",
@@ -153,52 +163,57 @@
           "sha256": "2b8c14c1f053bb08b918c988b1d476d83cc82574946d618bbe7be4b426be472b"
         },
         {
-          "blob": "86bbfbfe595d1df09b4d66ed19a8bd47bfe05bb5",
+          "blob": "72a11be3cc7223911f2e6a211b34226ee9ff37d4",
           "size": 1892237,
-          "sha256": "3b8385710b59ad3cdf6274a88811072a9bee97fd9235b765235888e751aafc54"
+          "sha256": "76e0ac1f031d94156283466a55818635f8d43ed6afc27bb1104bc54bc561d4b2"
         }
       ]
     },
     {
       "artifact": {
-        "file": "scvtc-zhixue-1.2.5-platform.apk",
+        "file": "scvtc-zhixue-1.2.6-platform.apk",
         "packageName": "cn.scvtc.campus.next",
-        "versionCode": 14,
+        "versionCode": 15,
         "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
-        "size": 332669951,
-        "sha256": "2ef1660104fb9d5e751028749b73137a6a0aa837687dfd97686266fea148a25d",
+        "size": 332676399,
+        "sha256": "5a841e5dca196d53b7107be2fff8361c2e35adf59e48b9b15e7c8ce8861f22da",
         "abi": "universal"
       },
       "parts": [
         {
-          "blob": "588beaa9ce2d0afdbc3de4063b92d0980613440a",
+          "blob": "efa142f430fd4c16009268c58af544b259c761be",
           "size": 2097152,
-          "sha256": "3d2779d886ff4935a34610a116ab87978314a5e1c7128786f23e56f956030e08"
+          "sha256": "4ec0569c1f08bc0be1f481a55cb8bf3e5dba8c6b8f3003558973985ba59ee75d"
         },
         {
-          "blob": "94bcb41d4ecee14141950b05448d049827afbb32",
+          "blob": "af09842aa486240f4cc5b59c574796d56592a545",
           "size": 2097152,
-          "sha256": "96586991a7f2d47a5383560fefa5d981e3d497f5732916c57344f2a60a093236"
+          "sha256": "e434cb7779f55d1961ece491ff031f70925cb3956b574e4a807aadb5491e567f"
         },
         {
-          "blob": "726fb008c99448975b74c2c263e8796ea754efdf",
+          "blob": "89154d0550a8abc07d711c6a4fe460f15a5c78d9",
           "size": 2097152,
-          "sha256": "addb4555a96bc629cd9c7a20502d7132e214eabfe43b0783b5747071b6264972"
+          "sha256": "e0b3a426732da9fdce1ad9d7add0477ec91cd63c73e80692add302cb5b02c7af"
         },
         {
-          "blob": "92e5944305e2ca05007f444f9270344206fbae04",
+          "blob": "51351ffcbfb1a23ad817237223c8beae3d79ae45",
           "size": 2097152,
-          "sha256": "aef412ab1a8d2e3cf5005e990cb47f1097bfc3ef2222bee6b976addf7fa65a3e"
+          "sha256": "bf7da03a9b8fe2f9be91728164224e8472ac0e39045fa93ad4416d5d276c3f36"
         },
         {
-          "blob": "4e41327b828a6ab1671eb97e24bd0fb8696ca054",
+          "blob": "e1f380b902b8483cad3657347279f93b626d9b42",
           "size": 2097152,
-          "sha256": "c4feb33f2af1eafa38dc651a0aa48e98ad56bf38bbbd62828d6ad97910363321"
+          "sha256": "b37db656ef164e87b53dd7a6bed523f3b3d2ada2ec9fa1f109c41e39c878f7c3"
         },
         {
-          "blob": "047c490403cd78a7e82809daf2da0f2da487f5b9",
+          "blob": "4a5ff9f21e29b25756a3e4eca3ee46c74d0784f7",
           "size": 2097152,
-          "sha256": "428a962f9b0859da9be78dc292e1f9ac51e717cbc885d7e72a12a6cc329d9bbe"
+          "sha256": "bd8376dcb0cdd4b2d83c4d519fa8cf97b2b5503a0759045fc05d04df934b3acf"
+        },
+        {
+          "blob": "4d7b8c1ce617e1f07c74c915f964f7ffa15175e9",
+          "size": 6108,
+          "sha256": "9036bc9f3ac05c40b120f0e229c2f9c6d3118d39357652496854379bbaeb575c"
         },
         {
           "blob": "ea33769f3d690d7c705ea869f68c530499b7ac4d",
@@ -906,14 +921,14 @@
           "sha256": "3a77b186cb0242299b1f1bf5a75ac1bc05ef7e0938d15011b5183911ee45f452"
         },
         {
-          "blob": "094d8cb024e58cfc5d9b132fa1023a9a57ea7a8b",
+          "blob": "871a84caead500c2e3e06272b1a562fae7f501a2",
           "size": 2097152,
-          "sha256": "771b2947d65bb8a592b3e4186acc993347489cb2191f37afd04b1a7f68b21329"
+          "sha256": "336597db3f429cebbce4f758c13059bf308e32dfaa272fb707c72fcae6b2c461"
         },
         {
-          "blob": "3839a967027f70c28f4198e687e5a21e6eea2d3e",
-          "size": 7,
-          "sha256": "dda384a3ab0230faadb949f75e2095b54262ba74c5e14fe2e7b3006c42f4a42a"
+          "blob": "6a9253266e4844f7bd8759c1553e2d1b428b9989",
+          "size": 352,
+          "sha256": "d3a6908849c25bb791b48b6e7292f41b8f083f8d80ad59776e10d740a14a3bf2"
         },
         {
           "blob": "011b3d76163325b825cffa32202833a6fd7a9609",
@@ -961,9 +976,9 @@
           "sha256": "d3069abc4b8f8a5164394c0a0d49874e2a3f27ca26cde42c5788c4638e087e2c"
         },
         {
-          "blob": "9605434906635a419e5405d3e115527a3c391049",
-          "size": 2097152,
-          "sha256": "53fa32250b4636189340aca6ddd6eacd7122ef8ab0d8d277e1aa4fb04f602861"
+          "blob": "e3aece42df726886bdb10f590bd451dd81ce8a5c",
+          "size": 2097147,
+          "sha256": "f336f1bb92e83d0b48c3eb70fceef663baa469964f271e81a0e28313b3753bd8"
         },
         {
           "blob": "4592d0ad2458c2f94c3fc9fc2ed118df1d56f931",
@@ -976,52 +991,57 @@
           "sha256": "d86489f269cde35ee352db6b1e6df0734dc3e31c9134f38e77c7a42faebff0b2"
         },
         {
-          "blob": "875be55cf88116f2fdfac6afa9b8fd1e2ae50158",
+          "blob": "d5678dbe6bc6ad00e119668e90eb515cac3cfa18",
           "size": 1307748,
-          "sha256": "0795554537cdfd7c9d5502d5bc12cd57813e8267e4422d881b3e73e48d6318a5"
+          "sha256": "fbd6fbf646f4f172d5fccac0c7309294600b9f946e9ceef5cd39b306dfd8a729"
         }
       ]
     },
     {
       "artifact": {
-        "file": "scvtc-zhixue-1.2.5-platform-arm64-v8a.apk",
+        "file": "scvtc-zhixue-1.2.6-platform-arm64-v8a.apk",
         "packageName": "cn.scvtc.campus.next",
-        "versionCode": 14,
+        "versionCode": 15,
         "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
-        "size": 129834068,
-        "sha256": "8c5a9a53b5e134f855686c03a2836ae6ae9f958c4712305c76d6c5261b463bd5",
+        "size": 129840516,
+        "sha256": "3170c2e397fbcb3784fcf4d769ef506b1c2981e445ced4ba09af8340d4e3d786",
         "abi": "arm64-v8a"
       },
       "parts": [
         {
-          "blob": "588beaa9ce2d0afdbc3de4063b92d0980613440a",
+          "blob": "efa142f430fd4c16009268c58af544b259c761be",
           "size": 2097152,
-          "sha256": "3d2779d886ff4935a34610a116ab87978314a5e1c7128786f23e56f956030e08"
+          "sha256": "4ec0569c1f08bc0be1f481a55cb8bf3e5dba8c6b8f3003558973985ba59ee75d"
         },
         {
-          "blob": "94bcb41d4ecee14141950b05448d049827afbb32",
+          "blob": "af09842aa486240f4cc5b59c574796d56592a545",
           "size": 2097152,
-          "sha256": "96586991a7f2d47a5383560fefa5d981e3d497f5732916c57344f2a60a093236"
+          "sha256": "e434cb7779f55d1961ece491ff031f70925cb3956b574e4a807aadb5491e567f"
         },
         {
-          "blob": "726fb008c99448975b74c2c263e8796ea754efdf",
+          "blob": "89154d0550a8abc07d711c6a4fe460f15a5c78d9",
           "size": 2097152,
-          "sha256": "addb4555a96bc629cd9c7a20502d7132e214eabfe43b0783b5747071b6264972"
+          "sha256": "e0b3a426732da9fdce1ad9d7add0477ec91cd63c73e80692add302cb5b02c7af"
         },
         {
-          "blob": "92e5944305e2ca05007f444f9270344206fbae04",
+          "blob": "51351ffcbfb1a23ad817237223c8beae3d79ae45",
           "size": 2097152,
-          "sha256": "aef412ab1a8d2e3cf5005e990cb47f1097bfc3ef2222bee6b976addf7fa65a3e"
+          "sha256": "bf7da03a9b8fe2f9be91728164224e8472ac0e39045fa93ad4416d5d276c3f36"
         },
         {
-          "blob": "4e41327b828a6ab1671eb97e24bd0fb8696ca054",
+          "blob": "e1f380b902b8483cad3657347279f93b626d9b42",
           "size": 2097152,
-          "sha256": "c4feb33f2af1eafa38dc651a0aa48e98ad56bf38bbbd62828d6ad97910363321"
+          "sha256": "b37db656ef164e87b53dd7a6bed523f3b3d2ada2ec9fa1f109c41e39c878f7c3"
         },
         {
-          "blob": "047c490403cd78a7e82809daf2da0f2da487f5b9",
+          "blob": "4a5ff9f21e29b25756a3e4eca3ee46c74d0784f7",
           "size": 2097152,
-          "sha256": "428a962f9b0859da9be78dc292e1f9ac51e717cbc885d7e72a12a6cc329d9bbe"
+          "sha256": "bd8376dcb0cdd4b2d83c4d519fa8cf97b2b5503a0759045fc05d04df934b3acf"
+        },
+        {
+          "blob": "4d7b8c1ce617e1f07c74c915f964f7ffa15175e9",
+          "size": 6108,
+          "sha256": "9036bc9f3ac05c40b120f0e229c2f9c6d3118d39357652496854379bbaeb575c"
         },
         {
           "blob": "ea33769f3d690d7c705ea869f68c530499b7ac4d",
@@ -1249,9 +1269,14 @@
           "sha256": "896d75943ead8a027f01eff4f81fb50b1a5683e4cbb9a9e784450fd2944e5f74"
         },
         {
-          "blob": "ad63745fc32e7fefbb53d7c72216bb8e113c4ed4",
-          "size": 590939,
-          "sha256": "9755402679a523dfc36254fba65c18664cd4b562bcde4048669a6ecf7c8186b9"
+          "blob": "ef6a77016e96bd60a17e81bfa65ba32b6a5f4ea7",
+          "size": 590932,
+          "sha256": "1cf49ad315e048748e7780474caab21b158db0fe92fa26d5b6f61d8af981c7bb"
+        },
+        {
+          "blob": "6a9253266e4844f7bd8759c1553e2d1b428b9989",
+          "size": 352,
+          "sha256": "d3a6908849c25bb791b48b6e7292f41b8f083f8d80ad59776e10d740a14a3bf2"
         },
         {
           "blob": "011b3d76163325b825cffa32202833a6fd7a9609",
@@ -1299,9 +1324,9 @@
           "sha256": "d3069abc4b8f8a5164394c0a0d49874e2a3f27ca26cde42c5788c4638e087e2c"
         },
         {
-          "blob": "9605434906635a419e5405d3e115527a3c391049",
-          "size": 2097152,
-          "sha256": "53fa32250b4636189340aca6ddd6eacd7122ef8ab0d8d277e1aa4fb04f602861"
+          "blob": "e3aece42df726886bdb10f590bd451dd81ce8a5c",
+          "size": 2097147,
+          "sha256": "f336f1bb92e83d0b48c3eb70fceef663baa469964f271e81a0e28313b3753bd8"
         },
         {
           "blob": "4592d0ad2458c2f94c3fc9fc2ed118df1d56f931",
@@ -1314,9 +1339,9 @@
           "sha256": "d86489f269cde35ee352db6b1e6df0734dc3e31c9134f38e77c7a42faebff0b2"
         },
         {
-          "blob": "47f8ed7337fd72b2260975ea1ebf00664e4111ec",
+          "blob": "5fa8c65dab4c88b16ed0ee61fecbc47ef0e658d4",
           "size": 1304677,
-          "sha256": "630cc453591f1bf93c2040f5612f911bfd2d6603996ce35321b0fb570955d618"
+          "sha256": "69072ae8c81eb40f7d79b2d4d5c6dc27a36dbc0760fe34ec9cbf5977cfe43ac4"
         }
       ]
     }
