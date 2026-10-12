@@ -29,9 +29,10 @@ class ScvtcWebActivity:FragmentActivity(){
  override fun onCreate(state:Bundle?){
   super.onCreate(state);enableEdgeToEdge()
   val module=intent.getStringExtra("module")?:"official"
-  val c=ScvtcWebSession.obtain(this,intent.getStringExtra("url")).let{ScvtcWebSession.controller}
-  c?.authenticationAccount=intent.getStringExtra("expected_account").orEmpty()
-  c?.module=module;c?.begin()
+  val initialCapture=ScvtcWebSession.obtain(this,intent.getStringExtra("url")).let{ScvtcWebSession.controller}
+  initialCapture?.authenticationAccount=intent.getStringExtra("expected_account").orEmpty()
+  initialCapture?.module=module;initialCapture?.begin()
+  initialCapture?.authenticationInProgress=!(intent.getStringExtra("url")?:School.HOME).startsWith(School.PORTAL.substringBefore('#'))
   ScvtcWebSession.fileChooser={callback,parameters->
    pendingFile?.onReceiveValue(null);pendingFile=callback
    try{filePicker.launch(parameters.createIntent())}catch(_:android.content.ActivityNotFoundException){
@@ -41,6 +42,15 @@ class ScvtcWebActivity:FragmentActivity(){
    true
   }
   setContent{NextTheme{
+   val documentRevision by ScvtcWebSession.documentRevision.collectAsState()
+   val c=remember(documentRevision) {
+    ScvtcWebSession.controller?.also { current ->
+     if(current!==initialCapture) {
+      current.authenticationAccount=intent.getStringExtra("expected_account").orEmpty()
+      current.module=module
+     }
+    }
+   }
    LaunchedEffect(c) {
     if(intent.getBooleanExtra("verification_only",false)) c?.authenticationVerified?.collect { verified ->
      if(verified) { setResult(RESULT_OK);finish() }
@@ -61,10 +71,10 @@ class ScvtcWebActivity:FragmentActivity(){
        NextButton("返回"){back()}
        Column(Modifier.weight(1f).padding(8.dp)){NextText(page.title);Text(if(page.error.isNotBlank())page.error else if(page.loading)"正在打开官方页面…"else "学校官方页面",style=MaterialTheme.typography.labelSmall,maxLines=2)}
        val actions=listOf<Pair<String,()->Unit>>(
-        "返回教务首页" to {ScvtcWebSession.navigate(School.HOME)},
-        "一网通办" to {ScvtcWebSession.navigate(School.PORTAL)},
-        "刷新当前页面" to {ScvtcWebSession.web?.reload()},
-        "重新认证" to {ScvtcWebSession.navigate(cn.scvtc.campus.CasAuthManager.JWXT_SSO_ENTRY)},
+        "返回教务首页" to {c?.begin();c?.authenticationInProgress=true;ScvtcWebSession.navigate(School.HOME)},
+        "一网通办" to {c?.authenticationInProgress=false;ScvtcWebSession.navigate(School.PORTAL)},
+        "刷新当前页面" to {ScvtcWebSession.web?.reload()?:ScvtcWebSession.navigate(School.HOME)},
+        "重新认证" to {c?.begin();c?.authenticationInProgress=true;ScvtcWebSession.navigate(cn.scvtc.campus.CasAuthManager.JWXT_SSO_ENTRY)},
         "本机自动登录" to {login=true},
         "全屏浏览" to {full=true},
         "在系统浏览器打开" to {openBrowser()}
@@ -76,7 +86,9 @@ class ScvtcWebActivity:FragmentActivity(){
       }
      }
      // Attach the existing document once. Recomposition and returning never reload HOME.
-     AndroidView(factory={FrameLayout(it).also{container->ScvtcWebSession.attachVisible(this@ScvtcWebActivity,container)}},modifier=Modifier.weight(1f).fillMaxWidth())
+     key(documentRevision) {
+      AndroidView(factory={FrameLayout(it).also{container->ScvtcWebSession.attachVisible(this@ScvtcWebActivity,container)}},modifier=Modifier.weight(1f).fillMaxWidth())
+     }
      if(!full&&module=="schedule"){
       Row(Modifier.fillMaxWidth().padding(8.dp),horizontalArrangement=Arrangement.spacedBy(8.dp)){
        NextButton("同步课表",Modifier.weight(1f)){if(ScvtcRuntime.account.isBlank())ask=true else c?.start("range")}

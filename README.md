@@ -6,7 +6,7 @@
 
 这是为四川职业技术学院重构的 Android 教务应用，基于川职 Next 的课程与插件架构。它把课表、成绩、学分和学校服务放在一起，适合希望少切几个页面、把学业看得更清楚的同学。
 
-[下载 APK](https://github.com/zwwd1/scvtc-zhixue/releases/latest) · [反馈问题](https://github.com/zwwd1/scvtc-zhixue/issues) · [更新记录](release-notes/v1.2.6.md)
+[下载 APK](https://github.com/zwwd1/scvtc-zhixue/releases/latest) · [反馈问题](https://github.com/zwwd1/scvtc-zhixue/issues) · [更新记录](release-notes/v1.2.7.md)
 
 ## 连接学校，回到日常
 

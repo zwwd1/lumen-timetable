@@ -86,11 +86,31 @@
       setter.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));
     }
   };
+  // The official CAS bundle uses personCenter as its default applications page.
+  // This requests the protected JWXT entry, never proof of an authenticated student.
+  const isLanding = () => casPage && location.pathname === '/cas/H5/index.html' &&
+    location.hash.slice(1).split('?')[0].replace(/\/$/, '') === '/personCenter' &&
+    !humanChallenge() && ![...document.querySelectorAll('.ivu-modal')].some(visible);
+  let lastLanding = '';
+  const reportLanding = () => {
+    if (!isLanding() || lastLanding === location.href ||
+        typeof window.OfficialLoginBridge?.postMessage !== 'function') return;
+    lastLanding = location.href;
+    window.OfficialLoginBridge.postMessage(JSON.stringify({kind:'cas-landing',page:location.href}));
+  };
+  if (casPage) {
+    window.addEventListener('hashchange', reportLanding);
+    window.addEventListener('popstate', reportLanding);
+    document.addEventListener('DOMContentLoaded', reportLanding);
+    new MutationObserver(reportLanding).observe(document,{childList:true,subtree:true});
+  }
   window.__officialLoginMemory = { describe:() => identify(true)?.binding || null,
+    reportLanding,
     setBackgroundMode:() => { background = casPage && allowedService(); },
     state:() => {
       if (!casPage) return 'outside';
       if (humanChallenge() || [...document.querySelectorAll('input')].some(e => visible(e) && challenge(e))) return 'challenge';
+      if (isLanding()) return 'handoff';
       const errors = [...document.querySelectorAll('.ivu-message-error')].filter(visible);
       if (errors.some(e => /(?:账号|帐号|账户|密码|用户名).*(?:错误|不正确|不存在|锁定|禁用|停用)/.test(e.textContent || ''))) return 'rejected';
       if (errors.length) return 'unavailable';

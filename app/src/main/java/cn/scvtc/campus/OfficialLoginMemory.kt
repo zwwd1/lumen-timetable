@@ -8,6 +8,21 @@ import org.json.JSONObject
 
 /** Credentials are captured only from a user's real submit, then bound to verified identity. */
 class OfficialLoginMemory(private val context:Context) {
+    private var disposed=false
+    private val pendingCallbacks=mutableMapOf<Runnable,WebView>()
+    private fun post(web:WebView,delay:Long,block:()->Unit) {
+        if(disposed)return
+        lateinit var action:Runnable
+        action=Runnable { pendingCallbacks.remove(action);if(!disposed)block() }
+        pendingCallbacks[action]=web
+        web.postDelayed(action,delay)
+    }
+    fun dispose() {
+        if(disposed)return
+        disposed=true
+        pendingCallbacks.forEach { (action,web)->web.removeCallbacks(action) }
+        pendingCallbacks.clear()
+    }
     private val origins=setOf("https://jwxt.scvtc.edu.cn","https://portal.scvtc.edu.cn","https://cas.scvtc.edu.cn")
     private val prefs=context.getSharedPreferences("official_login_memory",Context.MODE_PRIVATE)
     companion object {
@@ -103,12 +118,17 @@ class OfficialLoginMemory(private val context:Context) {
         if(value.optString("LYSESSIONID").isNotBlank())runCatching{prefs.edit().putString("session:$account",seal(account,value.toString())).commit()}
         android.webkit.CookieManager.getInstance().flush()
     }
-    fun install(web:WebView,onIdentity:(String)->Unit={},expectedAccount:()->String={""}) {
+    fun install(web:WebView,onIdentity:(String)->Unit={},onAuthLanding:(String)->Unit={},expectedAccount:()->String={""}) {
         if(!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER))return
         WebViewCompat.addWebMessageListener(web,"OfficialLoginBridge",origins){_,message,origin,main,_->
-            if(main && origin.toString().trimEnd('/') in origins)runCatching {
-                val m=JSONObject(message.data.orEmpty())
+            if(!disposed && main && origin.toString().trimEnd('/') in origins)runCatching {
+                val raw=message.data.orEmpty();require(raw.length<=16_384)
+                val m=JSONObject(raw)
                 require(trusted(m.getString("page")) && web.url==m.getString("page"))
+                if(m.optString("kind")=="cas-landing") {
+                    require(origin.toString().trimEnd('/')=="https://cas.scvtc.edu.cn" && OfficialAuthNavigation.isCasLanding(m.getString("page")))
+                    onAuthLanding(m.getString("page"));return@runCatching
+                }
                 require(m.getJSONObject("binding").getString("origin")==origin.toString().trimEnd('/'))
                 require(m.getString("username").matches(Regex("[0-9]{6,20}")) && m.getString("password").length in 1..512)
                 check(stage(m))
@@ -116,7 +136,7 @@ class OfficialLoginMemory(private val context:Context) {
         }
         var document="";var verified="";val staged=mutableMapOf<String,JSONObject>()
         WebViewCompat.addWebMessageListener(web,"JwxtHeaderBridge",setOf("https://jwxt.scvtc.edu.cn")){_,message,origin,main,_->
-            if(main && origin.toString().trimEnd('/')=="https://jwxt.scvtc.edu.cn")runCatching{
+            if(!disposed && main && origin.toString().trimEnd('/')=="https://jwxt.scvtc.edu.cn")runCatching{
                 val raw=message.data.orEmpty();require(raw.length<=2_600_000)
                 val m=JSONObject(raw);require(m.getString("page")==web.url)
                 // Hash navigation stays in the same document. Keep its verified
@@ -155,10 +175,13 @@ class OfficialLoginMemory(private val context:Context) {
         runCatching{check(prefs.edit().putString(account,seal(account,value.toString())).remove("enrollment:$account").remove("attempt:$account").commit())}
     }
     fun prepare(web:WebView) {
+        if(disposed)return
         if(trusted(web.url.orEmpty()) && WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER))
             web.evaluateJavascript(context.assets.open("official-login-memory.js").bufferedReader().use{it.readText()},null)
         if(web.url?.startsWith("https://jwxt.scvtc.edu.cn/")==true && WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER))
             web.evaluateJavascript(context.assets.open("jwxt-auth-session.js").bufferedReader().use{it.readText()},null)
+        if(trusted(web.url.orEmpty()) && WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER))
+            web.evaluateJavascript("window.__officialLoginMemory?.reportLanding()",null)
     }
     /** Explicit native input is staged, and saved only after the real identity response. */
     fun configure(web:WebView,account:String,password:String,background:Boolean=false,onResult:(Boolean)->Unit) {
@@ -167,10 +190,12 @@ class OfficialLoginMemory(private val context:Context) {
         }
     }
     private fun configureReady(web:WebView,account:String,password:String,onResult:(Boolean)->Unit) {
+        if(disposed)return
         val page=web.url.orEmpty()
         if(!trusted(page)||!account.matches(Regex("[0-9]{6,20}"))||password.length !in 1..512){onResult(false);return}
         prepare(web)
         web.evaluateJavascript("JSON.stringify(window.__officialLoginMemory?.describe() || null)"){raw->
+            if(disposed)return@evaluateJavascript
             val binding=runCatching{val value=org.json.JSONTokener(raw).nextValue() as? String;value?.let(::JSONObject)}.getOrNull()
             if(binding==null||web.url!=page||binding.optString("origin")!="https://${Uri.parse(page).host}"){onResult(false);return@evaluateJavascript}
             if(!stage(JSONObject().put("page",page).put("binding",binding).put("username",account).put("password",password))) {onResult(false);return@evaluateJavascript}
@@ -178,13 +203,14 @@ class OfficialLoginMemory(private val context:Context) {
             // Fill a human-challenge form, but only report automatic submission
             // when the official submit handler can actually be invoked.
             web.evaluateJavascript("window.__officialLoginMemory?.configure($binding,${JSONObject.quote(account)},${JSONObject.quote(password)},false)"){value->
+                if(disposed)return@evaluateJavascript
                 if(value!="true")prefs.edit().remove("enrollment:$account").apply()
                 if(value!="true"){onResult(false);return@evaluateJavascript}
                 // Vue updates the submit button after input events, on its next render.
-                web.postDelayed({
-                    if(web.url!=page){onResult(false);return@postDelayed}
-                    web.evaluateJavascript("window.__officialLoginMemory?.restore($binding,${JSONObject.quote(account)},${JSONObject.quote(password)})"){submitted->onResult(submitted=="true")}
-                },100)
+                post(web,100) {
+                    if(web.url!=page){onResult(false);return@post}
+                    web.evaluateJavascript("window.__officialLoginMemory?.restore($binding,${JSONObject.quote(account)},${JSONObject.quote(password)})"){submitted->if(!disposed)onResult(submitted=="true")}
+                }
             }
         }
     }
@@ -203,19 +229,22 @@ class OfficialLoginMemory(private val context:Context) {
         // CAS is a SPA: document load is earlier than its visible form mounting.
         // Wait for a recognisable form without sending credentials or clicking.
         fun ready(){
+            if(disposed)return
             if(web.url!=page){onResult(false);return}
             prepare(web)
             if(background)web.evaluateJavascript("window.__officialLoginMemory?.setBackgroundMode()",null)
             web.evaluateJavascript("!!window.__officialLoginMemory?.describe()"){result->
+                if(disposed)return@evaluateJavascript
                 if(web.url!=page)onResult(false)
                 else if(result=="true")onResult(true)
-                else if(android.os.SystemClock.elapsedRealtime()<deadline)web.postDelayed({ready()},400)
+                else if(android.os.SystemClock.elapsedRealtime()<deadline)post(web,400){ready()}
                 else onResult(false)
             }
         }
         ready()
     }
     private fun recoverBoundForm(web:WebView,account:String,onResult:(Boolean)->Unit) {
+        if(disposed)return
         val url=web.url.orEmpty()
         if(url==recoveringPage && System.currentTimeMillis()-lastAttempt<120_000){onResult(true);return}
         lastAttempt=maxOf(lastAttempt,prefs.getLong("attempt:$account",0L))
@@ -232,6 +261,7 @@ class OfficialLoginMemory(private val context:Context) {
         val script=context.assets.open("official-login-memory.js").bufferedReader().use{it.readText()}
         web.evaluateJavascript(script,null)
         web.evaluateJavascript("window.__officialLoginMemory?.matches(${saved.getJSONObject("binding")})"){matches->
+            if(disposed)return@evaluateJavascript
             if(web.url!=url){onResult(false)}
             else if(matches!="true"){
                 // Re-bind only through the current, whitelisted official CAS
@@ -243,7 +273,7 @@ class OfficialLoginMemory(private val context:Context) {
                 lastAttempt=System.currentTimeMillis()
                 if(!prefs.edit().putLong("attempt:$account",lastAttempt).putBoolean("pending:$account",true).commit()){onResult(false);return@evaluateJavascript}
                 recoveringPage=url
-                web.evaluateJavascript("window.__officialLoginMemory?.restore(${saved.getJSONObject("binding")},${JSONObject.quote(saved.getString("username"))},${JSONObject.quote(saved.getString("password"))})"){onResult(it=="true")}
+                web.evaluateJavascript("window.__officialLoginMemory?.restore(${saved.getJSONObject("binding")},${JSONObject.quote(saved.getString("username"))},${JSONObject.quote(saved.getString("password"))})"){if(!disposed)onResult(it=="true")}
             }
         }
     }

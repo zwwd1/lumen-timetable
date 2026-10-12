@@ -20,6 +20,7 @@ class CourseApplication : Application() {
         }
         if (processName == packageName) {
             mainProcess = true
+            cn.scvtc.campus.OfficialAuthHost.install(this)
             com.tyust.course.scvtc.ScvtcRuntime.initialize(this)
             com.tyust.course.manager.UserManager.getInstance().init(this)
             com.tyust.course.usage.UsageStatsManager.initialize(this)

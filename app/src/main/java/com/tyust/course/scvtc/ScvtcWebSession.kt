@@ -21,6 +21,9 @@ object ScvtcWebSession {
  var foreground=WeakReference<FragmentActivity>(null)
  var web:WebView?=null;private set
  var controller:ScvtcCapture?=null;private set
+ val documentRevision=kotlinx.coroutines.flow.MutableStateFlow(0)
+ private val memories=java.util.WeakHashMap<WebView,cn.scvtc.campus.OfficialLoginMemory>()
+ private val released=java.util.WeakHashMap<WebView,Boolean>()
  val page=kotlinx.coroutines.flow.MutableStateFlow(OfficialWebPage())
  var fileChooser:((ValueCallback<Array<Uri>>,WebChromeClient.FileChooserParams)->Boolean)?=null
  private var popup:android.app.Dialog?=null
@@ -35,6 +38,7 @@ object ScvtcWebSession {
    return it
   }
   val view=WebView(MutableContextWrapper(activity));web=view
+  documentRevision.value++
   val c=ScvtcCapture(view);controller=c
   captureScript=activity.assets.open("scvtc-capture.js").bufferedReader().use{it.readText()}
   configure(view,c)
@@ -58,8 +62,9 @@ object ScvtcWebSession {
   CookieManager.getInstance().setAcceptCookie(true)
   CookieManager.getInstance().setAcceptThirdPartyCookies(view,true)
   val login=cn.scvtc.campus.OfficialLoginMemory(ScvtcRuntime.context)
+  memories[view]=login
   capture?.loginMemory=login
-  login.install(view){capture?.authenticationAccount?.ifBlank { ScvtcRuntime.account } ?: ScvtcRuntime.account}
+  login.install(view,onAuthLanding={page->capture?.continueAfterCas(page)}){capture?.authenticationAccount?.ifBlank { ScvtcRuntime.account } ?: ScvtcRuntime.account}
   val messages=WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)
   val early=messages&&WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
   if(messages)WebViewCompat.addWebMessageListener(view,"CampusBridge",setOf(School.ORIGIN)){_,message,origin,main,_ ->
@@ -111,6 +116,17 @@ object ScvtcWebSession {
      }else page.value=page.value.copy(loading=false,error="官方页面返回 HTTP "+response.statusCode+"；可刷新或重新认证")
     }
    }
+   override fun onRenderProcessGone(v:WebView,detail:RenderProcessGoneDetail):Boolean {
+    if(v===web) {
+     controller?.dispose();controller=null;web=null
+     release(v,rendererGone=true)
+     page.value=page.value.copy(loading=false,error="学校页面已关闭，可从菜单刷新或重新认证；离线课表保留")
+    } else {
+     release(v,rendererGone=true)
+     if(v===popupWeb)popup?.dismiss()
+    }
+    return true
+   }
   }
   view.webChromeClient=object:WebChromeClient(){
    override fun onReceivedTitle(v:WebView,title:String?){observedPage(v,v.url.orEmpty(),title.orEmpty())}
@@ -126,7 +142,7 @@ object ScvtcWebSession {
     layout.addView(child,android.widget.LinearLayout.LayoutParams(-1,0,1f))
     dialog.setContentView(layout)
     dialog.setOnDismissListener{
-     child.stopLoading();child.destroy()
+     release(child)
      if(popup===dialog){popup=null;popupWeb=null;web?.let{observedPage(it,it.url.orEmpty(),it.title.orEmpty())}}
     }
     dialog.show();dialog.window?.setLayout(-1,-1)
@@ -140,8 +156,21 @@ object ScvtcWebSession {
   }
  }
  fun navigate(url:String){
+  if(web==null) {
+   val activity=foreground.get()?:return
+   obtain(activity,url.takeIf(OfficialWebNavigation::trusted)?:School.HOME)
+   controller?.authenticationInProgress=!url.startsWith(School.PORTAL.substringBefore('#'))
+   return
+  }
   val view=web?:return
   if(OfficialWebNavigation.trusted(url))view.loadUrl(url)else external(view,url)
+ }
+ private fun release(view:WebView,rendererGone:Boolean=false) {
+  if(released.put(view,true)!=null)return
+  memories.remove(view)?.dispose()
+  (view.parent as? android.view.ViewGroup)?.removeView(view)
+  if(!rendererGone)view.stopLoading()
+  view.destroy()
  }
  fun external(view:WebView,url:String){runCatching{view.context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(url)))}.onFailure{page.value=page.value.copy(error="未能打开目标服务：系统没有可用的浏览器或应用")}}
  fun attachVisible(activity:FragmentActivity,container:FrameLayout){
@@ -155,7 +184,7 @@ object ScvtcWebSession {
   web?.let{it.onPause();(it.parent as? android.view.ViewGroup)?.removeView(it);(it.context as MutableContextWrapper).baseContext=ScvtcRuntime.context}
   ScvtcSyncWork.enqueue(ScvtcRuntime.context)
  }
- fun close(){popup?.dismiss();controller?.dispose();controller=null;web?.let{(it.parent as? android.view.ViewGroup)?.removeView(it);it.destroy()};web=null;page.value=OfficialWebPage()}
+ fun close(){popup?.dismiss();controller?.dispose();controller=null;web?.let(::release);web=null;page.value=OfficialWebPage()}
 }
 /** Observes authenticated JSON identity and semester responses only. WebView
  * establishes SSO; ScvtcRuntime performs every data read through native HTTP. */
@@ -165,6 +194,8 @@ class ScvtcCapture(private val web:WebView){
  private val messages=Channel<String>(32)
  var visible=true
  var authenticationAccount=""
+ var authenticationInProgress=true
+ private val authenticationNavigation=cn.scvtc.campus.OfficialAuthNavigation()
  val authenticationVerified=kotlinx.coroutines.flow.MutableStateFlow(false)
  var module="schedule"
  var detectedAccount="";var detectedTerm="";var detectedName=""
@@ -175,10 +206,16 @@ class ScvtcCapture(private val web:WebView){
  private var generation=""
  private var startedGeneration=""
  private var authenticationRetries=0
- fun begin(resetAuthentication:Boolean=true){if(resetAuthentication){authenticationRetries=0;authenticationVerified.value=false};startedGeneration=""}
+ fun begin(resetAuthentication:Boolean=true){if(resetAuthentication){authenticationRetries=0;authenticationVerified.value=false;authenticationNavigation.reset()};startedGeneration=""}
+ fun continueAfterCas(page:String) {
+  if(!authenticationInProgress||web.url!=page)return
+  val target=authenticationNavigation.continueFrom(page)?:return
+  ScvtcRuntime.status.value="正在进入教务首页…"
+  web.loadUrl(target)
+ }
  init{scope.launch{for(text in messages){try{consume(JSONObject(text))}catch(e:CancellationException){throw e}catch(e:Exception){fail(e.message?:"身份确认未完成")}}}}
  fun receive(text:String){if(text.length>2600000||messages.trySend(text).isFailure)fail("学校页面消息未完成，请重新连接")}
- fun dispose(){scope.cancel();messages.close()}
+ fun dispose(){loginMemory?.dispose();scope.cancel();messages.close()}
  fun resetDocument(){verifiedAccount="";documentId="";officialMonday=null;generation="";detectedAccount="";detectedTerm=""}
  fun stop(){startedGeneration=generation}
  fun fail(message:String){ScvtcRuntime.status.value="${message.take(180)}；已保留离线课表"}
@@ -190,6 +227,7 @@ class ScvtcCapture(private val web:WebView){
   if(ScvtcRuntime.account.isBlank()){ScvtcRuntime.status.value="请完成一次官方登录，身份确认后会自动读取数据";return}
   if(authenticationRetries>=1){fail("自动恢复未完成，请在官方页补充认证");return}
   authenticationRetries++
+  authenticationInProgress=true;authenticationNavigation.reset()
   ScvtcRuntime.status.value="正在恢复学校会话并继续同步；离线课表保留"
   web.loadUrl(cn.scvtc.campus.CasAuthManager.JWXT_SSO_ENTRY)
  }
@@ -207,6 +245,7 @@ class ScvtcCapture(private val web:WebView){
    ScvtcRuntime.acceptVerifiedIdentity(student)
    memory.confirmed(expected,promoteEnrollment=true)
    authenticationVerified.value=true
+   authenticationInProgress=false
    // The identity result returns to the caller now; calendar/data failures
    // belong to background sync and cannot turn a valid login into a failure.
    ScvtcRuntime.startNativeSync()
