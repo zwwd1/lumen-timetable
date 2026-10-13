@@ -38,6 +38,8 @@ for artifact, parts in artifacts:
     expected = {
         'zwwd1/scvtc-kejian': ('cn.scvtc.campus.preview', '5cab58b4d47d14e66143be594d3a4eebb5624be7e8f6a15354126bdab47343b3'),
         'zwwd1/scvtc-zhixue': ('cn.scvtc.campus.next', 'f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed'),
+        'zwwd1/gnomon-timetable': ('cn.scvtc.campus.preview', '5cab58b4d47d14e66143be594d3a4eebb5624be7e8f6a15354126bdab47343b3'),
+        'zwwd1/lumen-timetable': ('cn.scvtc.campus.next', 'f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed'),
     }[REPO]
     assert (artifact['packageName'], artifact['certificateSha256']) == expected
     apk = bytearray()
@@ -57,7 +59,7 @@ for artifact, parts in artifacts:
             assert META['sourceCommit'].encode() in archive.read('META-INF/version-control-info.textproto')
             abis = {name.split('/')[1] for name in archive.namelist() if name.startswith('lib/') and name.endswith('.so')}
             if artifact.get('abi') == 'arm64-v8a': assert abis == {'arm64-v8a'}
-            if artifact.get('abi') == 'universal' and REPO.endswith('scvtc-zhixue'): assert abis == {'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'}
+            if artifact.get('abi') == 'universal' and expected[0] == 'cn.scvtc.campus.next': assert abis == {'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'}
         sdk = Path(os.environ['ANDROID_HOME']) / 'build-tools'
         tools = sorted((p for p in sdk.iterdir() if (p / 'apksigner').is_file()), key=lambda p: tuple(map(int, re.findall(r'\d+', p.name))))[-1]
         cert = subprocess.check_output([str(tools/'apksigner'), 'verify', '--verbose', '--print-certs', str(path)], text=True)

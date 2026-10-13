@@ -23,7 +23,7 @@ class CasAuthManager(private val context:Context,private val api:JwxtApi) {
     private suspend fun authenticate(account:String,password:String?,onProgress:(String)->Unit={}):JwxtStudent=withContext(Dispatchers.Main) {
         val login=OfficialLoginMemory(context.applicationContext)
         val failure=CompletableDeferred<Unit>()
-        val recoveryPages=mutableSetOf<String>()
+        val recoveryDocuments=mutableSetOf<Int>()
         var targetReady=false
         var homeRetry=false
         var destroyed=false
@@ -39,6 +39,12 @@ class CasAuthManager(private val context:Context,private val api:JwxtApi) {
             web.loadUrl(target)
             return true
         }
+        fun restoreService():Boolean {
+            if(destroyed)return false
+            val target=navigation.restoreService()?:return false
+            targetReady=false;onProgress("正在建立教务会话…")
+            web.loadUrl(target);return true
+        }
         web.settings.apply {
             javaScriptEnabled=true;domStorageEnabled=true
             useWideViewPort=true;loadWithOverviewMode=true
@@ -52,7 +58,8 @@ class CasAuthManager(private val context:Context,private val api:JwxtApi) {
         web.measure(android.view.View.MeasureSpec.makeMeasureSpec(metrics.widthPixels,android.view.View.MeasureSpec.EXACTLY),
             android.view.View.MeasureSpec.makeMeasureSpec(metrics.heightPixels,android.view.View.MeasureSpec.EXACTLY))
         web.layout(0,0,metrics.widthPixels,metrics.heightPixels);web.onResume()
-        login.install(web,onIdentity={identityReady.complete(Unit)},onAuthLanding={continueJwxt(it)}){account}
+        login.install(web,onIdentity={identityReady.complete(Unit)},onAuthLanding={continueJwxt(it)},
+            onSessionRequired={page->if(web.url==page)restoreService()}){account}
         fun stage(code:String)=when(code) {
             "challenge" -> AuthenticationStage.CHALLENGE
             "notice" -> AuthenticationStage.NOTICE
@@ -62,9 +69,29 @@ class CasAuthManager(private val context:Context,private val api:JwxtApi) {
         }
         suspend fun pageState():String=suspendCancellableCoroutine { continuation ->
             if(destroyed){continuation.resumeWith(Result.success("outside"));return@suspendCancellableCoroutine}
+            val epoch=documentEpoch;val page=web.url
             web.evaluateJavascript("window.__officialLoginMemory?.state() || 'loading'") { value ->
-                if(continuation.isActive)continuation.resumeWith(Result.success(value.trim('"')))
+                if(continuation.isActive)continuation.resumeWith(Result.success(
+                    if(destroyed||epoch!=documentEpoch||web.url!=page)"loading"else value.trim('"')))
             }
+        }
+        fun beginForm(v:WebView,url:String) {
+            if(destroyed||v.url!=url||Uri.parse(url).host!="cas.scvtc.edu.cn"||
+                !recoveryDocuments.add(documentEpoch))return
+            val epoch=documentEpoch
+            onProgress("正在填写并提交学校认证…")
+            val completed:(Boolean)->Unit={restored->
+                if(!destroyed&&v.url==url&&epoch==documentEpoch) {
+                    if(restored)onProgress("认证已提交，正在核验学生身份…")
+                    else v.evaluateJavascript("window.__officialLoginMemory?.state() || 'loading'") { result ->
+                        if(!destroyed&&v.url==url&&epoch==documentEpoch&&
+                            result.trim('"') !in setOf("handoff","optional-notice"))
+                            failure.completeExceptionally(JwxtAuthenticationRequired(stage(result.trim('"'))))
+                    }
+                }
+            }
+            if(password==null)login.recover(v,account,background=true,onResult=completed)
+            else login.configure(v,account,password,background=true,onResult=completed)
         }
         web.webViewClient=object:WebViewClient() {
             override fun onPageStarted(v:WebView,url:String?,icon:android.graphics.Bitmap?) {
@@ -91,34 +118,22 @@ class CasAuthManager(private val context:Context,private val api:JwxtApi) {
                 if(host=="www.shulin-soft.com"){v.loadUrl(JWXT_SSO_ENTRY);return}
                 if(login.recoveryNavigation(v,account,url))return
                 if(host=="jwxt.scvtc.edu.cn")targetReady=true
-                if(host=="cas.scvtc.edu.cn" && recoveryPages.add(url)) {
-                    val epoch=documentEpoch
-                    onProgress("正在填写并提交学校认证…")
-                    val completed:(Boolean)->Unit={restored->
-                        if(!destroyed && restored) {
-                            onProgress("认证已提交，正在核验学生身份…")
-                        } else if(!destroyed && v.url==url && epoch==documentEpoch) {
-                            v.evaluateJavascript("window.__officialLoginMemory?.state() || 'loading'") { result ->
-                                if(!destroyed && v.url==url && epoch==documentEpoch)
-                                    failure.completeExceptionally(JwxtAuthenticationRequired(stage(result.trim('"'))))
-                            }
-                        }
-                    }
-                    if(password==null)login.recover(v,account,background=true,onResult=completed)
-                    else login.configure(v,account,password,background=true,onResult=completed)
-                }
+                if(host=="cas.scvtc.edu.cn")beginForm(v,url)
             }
             override fun onReceivedError(v:WebView,r:WebResourceRequest,e:WebResourceError) {
                 if(r.isForMainFrame) {
                     login.failedNetwork(account)
-                    failure.completeExceptionally(IllegalStateException("学校认证页面连接失败"))
+                    failure.completeExceptionally(java.io.IOException("学校认证页面连接失败"))
                 }
             }
             override fun onReceivedHttpError(v:WebView,r:WebResourceRequest,response:WebResourceResponse) {
                 if(!r.isForMainFrame)return
                 if(r.url.host=="jwxt.scvtc.edu.cn" && r.url.path=="/api/cas/login" && !homeRetry) {
                     homeRetry=true;targetReady=false;v.loadUrl(School.HOME)
-                } else failure.completeExceptionally(IllegalStateException("学校页面 HTTP "+response.statusCode))
+                } else failure.completeExceptionally(
+                    if(response.statusCode in setOf(408,429) || response.statusCode in 500..599)
+                        java.io.IOException("学校认证暂时无法响应")
+                    else IllegalStateException("学校页面 HTTP "+response.statusCode))
             }
             override fun onRenderProcessGone(v:WebView,detail:RenderProcessGoneDetail):Boolean {
                 destroyed=true;login.dispose();document.close(rendererGone=true)
@@ -132,11 +147,26 @@ class CasAuthManager(private val context:Context,private val api:JwxtApi) {
                 onProgress("正在连接川职教务…")
                 web.loadUrl(JWXT_SSO_ENTRY)
                 var probes=0
+                var optionalNoticeSince=0L
                 while(true) {
                     if(failure.isCompleted)failure.await()
                     val currentUrl=web.url.orEmpty()
                     if(Uri.parse(currentUrl).host=="cas.scvtc.edu.cn") {
                         val state=pageState()
+                        if(web.url!=currentUrl)continue
+                        // A usable SPA form can precede window.load by minutes
+                        // when an image or font stalls. Start the bounded form
+                        // readiness check without waiting for onPageFinished.
+                        if(state in setOf("loading","form"))beginForm(web,currentUrl)
+                        if(state=="optional-notice") {
+                            val now=android.os.SystemClock.elapsedRealtime()
+                            if(optionalNoticeSince==0L)optionalNoticeSince=now
+                            if(now-optionalNoticeSince>=5_000)throw JwxtAuthenticationRequired(AuthenticationStage.NOTICE)
+                            onProgress("正在继续学校认证…")
+                            web.evaluateJavascript("window.__officialLoginMemory?.continueOptionalNotice()",null)
+                            delay(300);continue
+                        }
+                        optionalNoticeSince=0L
                         if(state=="handoff"&&continueJwxt(currentUrl)){delay(400);continue}
                         if(state in setOf("challenge","notice","rejected","unavailable"))throw JwxtAuthenticationRequired(stage(state))
                     }
@@ -160,6 +190,7 @@ class CasAuthManager(private val context:Context,private val api:JwxtApi) {
                             val ready=withTimeoutOrNull(6_000){identityReady.await();true}==true
                             if(epoch!=documentEpoch||ready)continue
                         }
+                        if(restoreService())continue
                         if(!homeRetry) {
                             homeRetry=true;targetReady=false;web.loadUrl(School.HOME)
                         } else if(probes>=3) throw JwxtAuthenticationRequired(AuthenticationStage.SESSION)
@@ -172,6 +203,15 @@ class CasAuthManager(private val context:Context,private val api:JwxtApi) {
             currentCoroutineContext().ensureActive()
             login.failedNetwork(account)
             throw JwxtAuthenticationRequired(AuthenticationStage.CALLBACK)
+        } catch(e:JwxtAuthenticationRequired) {
+            if(e.stage==AuthenticationStage.NOTICE&&!destroyed) {
+                val observed=CompletableDeferred<Unit>()
+                web.evaluateJavascript(CasAuthDiagnostics.script){value->
+                    CasAuthDiagnostics.record(value);observed.complete(Unit)
+                }
+                withTimeoutOrNull(1_000){observed.await()}
+            }
+            throw e
         } catch(e:CancellationException) {
             login.failedNetwork(account)
             throw e

@@ -64,7 +64,8 @@ object ScvtcWebSession {
   val login=cn.scvtc.campus.OfficialLoginMemory(ScvtcRuntime.context)
   memories[view]=login
   capture?.loginMemory=login
-  login.install(view,onAuthLanding={page->capture?.continueAfterCas(page)}){capture?.authenticationAccount?.ifBlank { ScvtcRuntime.account } ?: ScvtcRuntime.account}
+  login.install(view,onAuthLanding={page->capture?.continueAfterCas(page)},
+   onSessionRequired={page->capture?.sessionRequired(page)}){capture?.authenticationAccount?.ifBlank { ScvtcRuntime.account } ?: ScvtcRuntime.account}
   val messages=WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)
   val early=messages&&WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
   if(messages)WebViewCompat.addWebMessageListener(view,"CampusBridge",setOf(School.ORIGIN)){_,message,origin,main,_ ->
@@ -206,6 +207,7 @@ class ScvtcCapture(private val web:WebView){
  private var generation=""
  private var startedGeneration=""
  private var authenticationRetries=0
+ private var recoveringDocument=""
  fun begin(resetAuthentication:Boolean=true){if(resetAuthentication){authenticationRetries=0;authenticationVerified.value=false;authenticationNavigation.reset()};startedGeneration=""}
  fun continueAfterCas(page:String) {
   if(!authenticationInProgress||web.url!=page)return
@@ -213,20 +215,27 @@ class ScvtcCapture(private val web:WebView){
   ScvtcRuntime.status.value="正在进入教务首页…"
   web.loadUrl(target)
  }
- init{scope.launch{for(text in messages){try{consume(JSONObject(text))}catch(e:CancellationException){throw e}catch(e:Exception){fail(e.message?:"身份确认未完成")}}}}
+ init{scope.launch{for(text in messages){try{consume(JSONObject(text))}catch(e:CancellationException){throw e}catch(e:cn.scvtc.campus.JwxtAuthenticationRequired){recoverSession()}catch(e:Exception){fail(e.message?:"身份确认未完成")}}}}
  fun receive(text:String){if(text.length>2600000||messages.trySend(text).isFailure)fail("学校页面消息未完成，请重新连接")}
  fun dispose(){loginMemory?.dispose();scope.cancel();messages.close()}
- fun resetDocument(){verifiedAccount="";documentId="";officialMonday=null;generation="";detectedAccount="";detectedTerm=""}
+ fun resetDocument(){recoveringDocument="";verifiedAccount="";documentId="";officialMonday=null;generation="";detectedAccount="";detectedTerm=""}
  fun stop(){startedGeneration=generation}
- fun fail(message:String){ScvtcRuntime.status.value="${message.take(180)}；已保留离线课表"}
+ fun fail(message:String){
+  ScvtcRuntime.status.value="${message.take(180)}；已保留离线课表"
+  if(ScvtcWebSession.web===web)ScvtcWebSession.page.value=ScvtcWebSession.page.value.copy(
+   loading=false,error="学校身份读取未完成，可从菜单刷新或重新认证；离线课表保留")
+ }
+ fun sessionRequired(page:String){if(web.url==page)recoverSession()}
  fun start(mode:String="range",resetAuthentication:Boolean=true){
   require(mode in setOf("range","weekly"));begin(resetAuthentication);startedGeneration=generation
   ScvtcRuntime.startNativeSync(mode)
  }
  private fun recoverSession(){
-  if(ScvtcRuntime.account.isBlank()){ScvtcRuntime.status.value="请完成一次官方登录，身份确认后会自动读取数据";return}
+  val page=web.url.orEmpty()
+  if(page==recoveringDocument)return
   if(authenticationRetries>=1){fail("自动恢复未完成，请在官方页补充认证");return}
   authenticationRetries++
+  recoveringDocument=page
   authenticationInProgress=true;authenticationNavigation.reset()
   ScvtcRuntime.status.value="正在恢复学校会话并继续同步；离线课表保留"
   web.loadUrl(cn.scvtc.campus.CasAuthManager.JWXT_SSO_ENTRY)

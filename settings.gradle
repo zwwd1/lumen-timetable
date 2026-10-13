@@ -29,5 +29,5 @@ dependencyResolutionManagement {
 
 include ':app', ':school-core', ':school-parser'
 
-rootProject.name = "CourseSelector"
+rootProject.name = "lumen-timetable"
 

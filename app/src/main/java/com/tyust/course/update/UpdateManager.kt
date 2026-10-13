@@ -92,7 +92,7 @@ class UpdateManager internal constructor(private val context: Context,
     }
     private fun sources(channel: String): List<String> {
         testSources?.let { return it(channel) }
-        return listOf("https://raw.githubusercontent.com/zwwd1/scvtc-zhixue/main/updates/$channel.json")
+        return listOf("https://raw.githubusercontent.com/zwwd1/lumen-timetable/main/updates/$channel.json")
     }
     private suspend fun fetch(url: String, selectedChannel: String): UpdateManifest {
         var target = url

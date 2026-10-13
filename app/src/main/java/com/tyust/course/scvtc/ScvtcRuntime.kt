@@ -63,13 +63,14 @@ object ScvtcRuntime {
  val taskRunning=MutableStateFlow(false)
  private var firstSync:Job?=null
  private var loginJob:Deferred<cn.scvtc.campus.JwxtStudent>?=null
+ private var frameworkRecovery:Job?=null
  val loginState=MutableStateFlow(cn.scvtc.campus.NativeLoginState())
  /** The caller observes an application task; leaving a page does not cancel it. */
  fun signIn(a:String,password:String):Deferred<cn.scvtc.campus.JwxtStudent> = synchronized(jobLock) {
   loginJob?.takeIf{!it.isCompleted}?.let{return@synchronized it}
   require(a.matches(Regex("[0-9]{6,20}")) && password.length in 1..512){"请输入学号和密码"}
   loginState.value=cn.scvtc.campus.NativeLoginState(a,busy=true,message="正在连接学校并核验学生身份…")
-  firstSync?.cancel();serviceJobs.values.toList().forEach{it.cancel()}
+  firstSync?.cancel();frameworkRecovery?.cancel();serviceJobs.values.toList().forEach{it.cancel()}
   val job=applicationJobs.async(start=CoroutineStart.LAZY) {
    try {
     val student=networkMutex.withLock {
@@ -110,8 +111,38 @@ object ScvtcRuntime {
   job.start();job
  }
  suspend fun cancelSignIn(){
-  val tasks=synchronized(jobLock){listOfNotNull(loginJob,firstSync)+serviceJobs.values.toList()}
+  val tasks=synchronized(jobLock){listOfNotNull(loginJob,firstSync,frameworkRecovery)+serviceJobs.values.toList()}
   tasks.forEach{it.cancel()};tasks.forEach{it.join()}
+ }
+ fun canRestoreFrameworkSession():Boolean {
+  if(!::context.isInitialized||account.isBlank())return false
+  val user=UserManager.getInstance()
+  return user.currentSchool?.id=="scvtc"&&user.studentId==account&&
+   cn.scvtc.campus.OfficialLoginMemory(context).inputPassword(account).isNotEmpty()
+ }
+ /** The existing session coordinator owns deduplication and scope installation;
+  * this operation uses the same school session and credential store as sync. */
+ fun restoreFrameworkSession(a:String,onDone:(Result<String>)->Unit):Job = synchronized(jobLock) {
+  val job=applicationJobs.launch(start=CoroutineStart.LAZY) {
+   try {
+    val cookie=networkMutex.withLock {
+     fun current():Boolean=account==a&&UserManager.getInstance().currentSchool?.id=="scvtc"&&UserManager.getInstance().studentId==a
+     check(a.isNotBlank()&&current())
+     val memory=cn.scvtc.campus.OfficialLoginMemory(context)
+     memory.restoreSession(a)
+     val api=cn.scvtc.campus.JwxtApi(headers={memory.apiHeaders(a,it)})
+     val auth=cn.scvtc.campus.CasAuthManager(context,api)
+     val student=cn.scvtc.campus.JwxtSessionManager(api,auth::restoreJwxt).verifiedStudent(a)
+     check(current());memory.confirmed(student.account)
+     withContext(Dispatchers.Main){check(current());android.webkit.CookieManager.getInstance().getCookie(cn.scvtc.campus.JwxtApi.BASE).orEmpty().also{check(it.isNotBlank())}}
+    }
+    onDone(Result.success(cookie))
+   }catch(e:CancellationException){onDone(Result.failure(e));throw e}
+   catch(e:Exception){onDone(Result.failure(e))}
+  }
+  frameworkRecovery=job;updateTaskRunning()
+  job.invokeOnCompletion{synchronized(jobLock){if(frameworkRecovery===job)frameworkRecovery=null;updateTaskRunning()}}
+  job.start();job
  }
  /** Identity is durable even when the school calendar is temporarily unavailable. */
  internal suspend fun acceptVerifiedIdentity(student:cn.scvtc.campus.JwxtStudent)=withContext(Dispatchers.Main){
@@ -133,7 +164,9 @@ object ScvtcRuntime {
       status.value="学校身份已核验，正在读取学期…"
       networkMutex.withLock {
        val memory=cn.scvtc.campus.OfficialLoginMemory(context)
-       val calendar=cn.scvtc.campus.JwxtApi(headers={memory.apiHeaders(a,it)}).calendar().first
+       val api=cn.scvtc.campus.JwxtApi(headers={memory.apiHeaders(a,it)})
+       val auth=cn.scvtc.campus.CasAuthManager(context,api)
+       val calendar=cn.scvtc.campus.JwxtSessionManager(api,auth::restoreJwxt).withSession(a){api.calendar().first}
        withContext(Dispatchers.Main){check(a==account&&semester.isBlank());confirm(a,calendar.semester);revision.value++}
       }
      }
@@ -147,7 +180,7 @@ object ScvtcRuntime {
    job.start()
   }
  }
- private fun updateTaskRunning(){taskRunning.value=loginJob?.isCompleted==false||firstSync?.isCompleted==false||serviceJobs.values.any{!it.isCompleted}}
+ private fun updateTaskRunning(){taskRunning.value=loginJob?.isCompleted==false||firstSync?.isCompleted==false||frameworkRecovery?.isCompleted==false||serviceJobs.values.any{!it.isCompleted}}
  fun stopNativeSync(){synchronized(jobLock){firstSync?.cancel();serviceJobs.values.toList().forEach{it.cancel()}};status.value="已停止本次同步，已保存的数据保留"}
  private val networkMutex=Mutex()
  fun refreshService(module:String){
@@ -315,7 +348,7 @@ object ScvtcRuntime {
      if(base.firstWeekDate.isBlank())setFirstMonday(calendar.firstMonday)
      status.value="课表和学生信息已保存，正在同步成绩与考试"
     }
-    var completed=0;var failed=0
+    var completed=0;var failed=0;var transientFailure:java.io.IOException?=null
     for(module in cn.scvtc.campus.JwxtServices.endpoints.keys){
      currentCoroutineContext().ensureActive();check(current())
      try {
@@ -325,9 +358,11 @@ object ScvtcRuntime {
      }catch(e:CancellationException){throw e}catch(e:Exception){
       failed++;context.getSharedPreferences("school_service_status",0).edit().putString("$requestedAccount:$requestedSemester:$module",if(e is cn.scvtc.campus.JwxtAuthenticationRequired)"auth-required"else"failed").apply()
       if(e is cn.scvtc.campus.JwxtAuthenticationRequired)throw e
+      if(e is java.io.IOException)transientFailure=e
      }
     }
     status.value="已保存 ${weeks.size} 周课表与学生信息；$completed 项服务完成"+if(failed>0)"，$failed 项未完成，原缓存保留"else""
+    transientFailure?.let { throw it }
     progress.complete()
     result?:error("课表读取未完成")
    }
@@ -395,7 +430,7 @@ object ScvtcRuntime {
  @JvmOverloads
  fun clearAuthentication(a:String,forgetCredentials:Boolean=true){
   if(!::context.isInitialized || !::db.isInitialized)return
-  synchronized(jobLock){loginJob?.cancel()}
+  synchronized(jobLock){loginJob?.cancel();frameworkRecovery?.cancel()}
   stopNativeSync()
   if(forgetCredentials)cn.scvtc.campus.OfficialLoginMemory(context).forget(a)
   ScvtcSyncWork.cancel(context)

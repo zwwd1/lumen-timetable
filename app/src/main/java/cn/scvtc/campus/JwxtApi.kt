@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit
 enum class AuthenticationStage { SESSION, FORM, CHALLENGE, NOTICE, REJECTED, CALLBACK }
 class JwxtAuthenticationRequired(val stage:AuthenticationStage=AuthenticationStage.SESSION) : IllegalStateException("AUTH_REQUIRED：教务 Session 需要恢复；离线内容保留")
 
+class JwxtServiceUnavailable(val status: Int) : java.io.IOException("教务暂时无法响应；原数据保留")
+
 /** The WebView cookie store is shared by CAS navigation and native HTTP. Each
  * request asks the store for its own URL; a CAS cookie is never copied to JWGR. */
 class JwxtCookieJar : CookieJar {
@@ -88,6 +90,12 @@ class JwxtApi(private val client:OkHttpClient=OkHttpClient.Builder()
         currentCoroutineContext().ensureActive()
         val (status,text)=raw
         if(status in setOf(401,403) || status in 300..399)throw JwxtAuthenticationRequired()
+        if(status in setOf(408,429) || status in 500..599) {
+            // The school's expired-session response also uses HTTP 510.
+            val code=runCatching { Json.parseToJsonElement(text).jsonObject["code"]?.jsonPrimitive?.content }.getOrNull()
+            if(code in setOf("401","403","51000010","53000010"))throw JwxtAuthenticationRequired()
+            throw JwxtServiceUnavailable(status)
+        }
         if(text.trimStart().startsWith("<")){
             if(status in 200..299)throw JwxtAuthenticationRequired()
             error("教务接口 HTTP $status；原数据保留")

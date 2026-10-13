@@ -6,7 +6,7 @@
 
 我不会实时维护，更新要看时间和精力。学校以后改登录方式或接口，应用可能会失效，也不保证立刻有人修。遇到了可以自己 fork，自行 vibe coding；源码和构建方法都留着，想怎么改就动手试试。
 
-[下载 APK](https://github.com/zwwd1/lumen-timetable/releases/latest) · [反馈问题](https://github.com/zwwd1/lumen-timetable/issues) · [更新记录](release-notes/v1.2.7.md)
+[下载 APK](https://github.com/zwwd1/lumen-timetable/releases/latest) · [反馈问题](https://github.com/zwwd1/lumen-timetable/issues) · [更新记录](release-notes/v1.2.9.md)
 
 ## 看图上手
 

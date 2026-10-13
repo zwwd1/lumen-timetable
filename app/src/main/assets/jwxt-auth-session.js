@@ -8,8 +8,15 @@
   const target=url=>{try{const u=new URL(url,location.href);return u.origin===location.origin&&paths.has(u.pathname)?u:null;}catch(_){return null;}};
   const headers=value=>{const safe={};try{new Headers(value||{}).forEach((v,k)=>{if(['permission','authorization','x-auth-token','token'].includes(k.toLowerCase())&&v.length<=8192)safe[k]=v;});}catch(_){}return safe;};
   const send=(page,url,head,status,body='')=>{
-    if(status<200||status>=300)return;
     if(page!==location.href)return;
+    if(new URL(url,location.href).pathname===identity) {
+      let code='';try{code=String(JSON.parse(body).code||'');}catch(_){}
+      if([401,403].includes(status)||['401','403','51000010','53000010'].includes(code)) {
+        try{window.JwxtHeaderBridge?.postMessage(JSON.stringify({kind:'session-required',page,documentId,url}));}catch(_){}
+        return;
+      }
+    }
+    if(status<200||status>=300)return;
     try{window.JwxtHeaderBridge?.postMessage(JSON.stringify({page,documentId,url,headers:head,identityBody:body}));}catch(_){}
   };
   const originalFetch=window.fetch;

@@ -20,9 +20,28 @@ object SessionRenewer {
         SessionRecoveryCoordinator(
             sessions = user.sessionState,
             now = SystemClock::elapsedRealtime,
-            canRestore = { user.currentSchool != null && user.canAutoRelogin() },
+            canRestore = { user.currentSchool != null && (if(user.currentSchool?.id=="scvtc")
+                com.tyust.course.scvtc.ScvtcRuntime.canRestoreFrameworkSession() else user.canAutoRelogin()) },
             install = { expected, cookie -> user.saveCookieIfCurrent(expected, cookie) },
             login = { _, done ->
+                if(user.currentSchool?.id=="scvtc") {
+                    val job=com.tyust.course.scvtc.ScvtcRuntime.restoreFrameworkSession(user.studentId) { result ->
+                        onMain { done(result.fold(
+                            { LoginRecoveryOutcome.Cookie(it) },
+                            { error ->
+                                val auth=error as? cn.scvtc.campus.JwxtAuthenticationRequired
+                                val reason=when(auth?.stage) {
+                                    cn.scvtc.campus.AuthenticationStage.CHALLENGE,cn.scvtc.campus.AuthenticationStage.NOTICE -> RecoveryFailure.VerificationRequired
+                                    cn.scvtc.campus.AuthenticationStage.REJECTED -> RecoveryFailure.CredentialsRejected
+                                    null -> if(error is java.io.IOException)RecoveryFailure.Network else RecoveryFailure.Login
+                                    else -> RecoveryFailure.Login
+                                }
+                                LoginRecoveryOutcome.Failure(reason,"学校会话未恢复；已保存的密码与本地数据保留，可重试或打开官方认证页")
+                            })) }
+                    }
+                    val cancel:()->Unit={job.cancel()}
+                    cancel
+                } else {
                 val school = requireNotNull(user.currentSchool)
                 val gateway = PasswordLoginGatewayFactory.create(school)
                 fun complete(outcome: LoginRecoveryOutcome) {
@@ -39,6 +58,7 @@ object SessionRenewer {
                 })
                 val cancel: () -> Unit = { gateway.clearSensitiveState() }
                 cancel
+                }
             }
         )
     }

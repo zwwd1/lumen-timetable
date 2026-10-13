@@ -321,7 +321,7 @@ fun SettingsScreen(
             }
 
             WallpaperCaption(
-                text = "璟 · $currentVersion",
+                text = "Lumen 课程表 · $currentVersion",
                 style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )

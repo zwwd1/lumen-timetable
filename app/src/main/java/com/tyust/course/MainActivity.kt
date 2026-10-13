@@ -735,10 +735,10 @@ fun MainScreen(fragmentActivity: FragmentActivity,showSchoolConnection:Boolean=f
             if(campusTools)com.tyust.course.ui.system.GlassSubpage(onDismiss={campusTools=false}){close->Column{com.tyust.course.scvtc.NextButton("返回",Modifier.statusBarsPadding().padding(12.dp),close);Box(Modifier.weight(1f)){com.tyust.course.scvtc.NextFileTools{fragmentActivity.startActivity(Intent(fragmentActivity,com.tyust.course.scvtc.ScvtcWebActivity::class.java))}}}}
             if(showSchoolConnection) SystemDialog(
                 onDismissRequest={onSchoolConnectionChoice(false)},
-                title={Text("连接一次，课表随行",style=MaterialTheme.typography.titleLarge)},
+                title={Text("Lumen 课程表 · 使用指南",style=MaterialTheme.typography.titleLarge)},
                 confirmButton={SystemPrimaryButton("连接川职教务",{onSchoolConnectionChoice(true)},Modifier.fillMaxWidth())},
                 dismissButton={SystemSecondaryButton("稍后",{onSchoolConnectionChoice(false)},Modifier.fillMaxWidth())}
-            ) { Text("使用四川职业技术学院账号。密码按账号加密保存在本机，过期后自动恢复。也可以稍后在设置中连接。") }
+            ) { Text("1. 连接学校\n填写学号和学校密码，登录后先读课表，再读成绩。密码加密记在本机。\n\n2. 找到需要的页面\n底栏切换课程、课表和设置，点课程看详情。成绩、学分从课程页打开。\n\n3. 调整课表\n课表右上角三点里有课表设置，可填节次时间、开提醒；设置里能调整外观和底栏。\n\n学校要求验证码时，在官方页面完成。暂不连接也可以先看看。") }
             DialogHost(
                 state = dialogHostState,
                 modifier = Modifier.fillMaxSize()
@@ -841,7 +841,7 @@ fun MainScreen(fragmentActivity: FragmentActivity,showSchoolConnection:Boolean=f
 @Composable
 private fun BoxScope.AppBuildWatermarks() {
     Text(
-        text = "璟 · 川职",
+        text = "Lumen 课程表 · 川职",
         modifier = Modifier
             .align(Alignment.BottomEnd)
             .navigationBarsPadding()

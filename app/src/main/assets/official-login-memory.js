@@ -9,7 +9,14 @@
     for (let node = e; node instanceof Element; node = node.parentElement) {
       const style = getComputedStyle(node);
       if (style.display === 'none' || ['hidden','collapse'].includes(style.visibility) ||
-          (!background && Number(style.opacity) === 0)) return false;
+          Number(style.opacity) === 0) return false;
+      // The official iView modal remains drawn during its leave transition.
+      // Its v-model value already records that the school closed the notice.
+      if (casPage && node.matches('.ivu-modal')) {
+        let component=node.__vue__;
+        for(let i=0;component&&component.$options?.name!=='Modal'&&i<8;i++)component=component.$parent;
+        if(component?.$options?.name==='Modal'&&component.value===false)return false;
+      }
     }
     return true;
   };
@@ -31,6 +38,30 @@
          u.hostname === 'www.shulin-soft.com' && u.port === '8267' && u.pathname === '/casLogin.html');
     } catch { return false; }
   };
+  const optionalNoticeAction = () => {
+    if (!casPage || !allowedService() || humanChallenge()) return null;
+    const modals = [...document.querySelectorAll('.ivu-modal')].filter(visible);
+    if (modals.length !== 1) return null;
+    const modal=modals[0], body=modal.querySelector('.ivu-modal-body');
+    let owner=modal.__vue__;
+    for(let i=0;owner&&owner.$options?.name!=='login'&&i<8;i++)owner=owner.$parent;
+    if(owner?.$options?.name!=='login'||owner.mustBind!==false||owner.needAutoLock===true)return null;
+    const cancel=modal.querySelector('.ivu-modal-footer .footer-left');
+    const bind=modal.querySelector('.ivu-modal-footer .footer-right');
+    if (!body || !cancel || !bind ||
+        !visible(cancel) || modal.querySelector('input,iframe') ||
+        cancel.getAttribute('aria-disabled') === 'true') return null;
+    const left=cancel.textContent.trim(), right=bind.textContent.trim();
+    const accountReminder=owner.noticeModalTitle==='账号安全提醒' && owner.twoBtn===true &&
+      typeof owner.twoBtnLeftClick==='function' &&
+      ((left==='稍后修改'&&right==='立即修改')||(left==='稍后绑定'&&right==='立即绑定'));
+    const phoneReminder=body.textContent.replace(/\s+/g,'')==='未查询到手机号，请先绑定账号。' &&
+      left==='取消'&&right==='去绑定'&&typeof owner.twoBtnLeftClick==='function';
+    if (!accountReminder && !phoneReminder) return null;
+    return {button:cancel,callback:owner.twoBtnLeftClick};
+  };
+  const dismissedNotices = new WeakMap();
+  let noticeAttempts = 0;
   const identify = (allowHuman = false) => {
     if (casPage && (!allowedService() || !['','#','#/'].includes(location.hash))) return null;
     const passwords = [...document.querySelectorAll('input[type=password]')].filter(visible);
@@ -42,6 +73,7 @@
     const panels = [...document.querySelectorAll('.login-panel > .content-info')].filter(visible);
     const scope = form || (h5 && panels.length === 1 ? panels[0] : null);
     if (!scope || !scope.contains(password)) return null;
+    if (!allowHuman && [...document.querySelectorAll('.ivu-modal')].some(e => visible(e) && !e.contains(password))) return null;
     if (h5 && (!password.matches('.account-input--pwd input.ivu-input') || password.placeholder !== '请输入密码')) return null;
     const action = new URL(form?.getAttribute('action') || location.href, location.href);
     if (action.origin !== location.origin || action.protocol !== 'https:') return null;
@@ -102,11 +134,19 @@
     window.addEventListener('hashchange', reportLanding);
     window.addEventListener('popstate', reportLanding);
     document.addEventListener('DOMContentLoaded', reportLanding);
-    new MutationObserver(reportLanding).observe(document,{childList:true,subtree:true});
+    new MutationObserver(reportLanding).observe(document,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
   }
   window.__officialLoginMemory = { describe:() => identify(true)?.binding || null,
     reportLanding,
     setBackgroundMode:() => { background = casPage && allowedService(); },
+    continueOptionalNotice:() => {
+      const action=optionalNoticeAction();
+      if (!action || noticeAttempts >= 3) return false;
+      let seen=dismissedNotices.get(action.button);
+      if (!seen) { seen=new WeakSet();dismissedNotices.set(action.button,seen); }
+      if (seen.has(action.callback)) return false;
+      seen.add(action.callback);noticeAttempts++;action.button.click();return true;
+    },
     state:() => {
       if (!casPage) return 'outside';
       if (humanChallenge() || [...document.querySelectorAll('input')].some(e => visible(e) && challenge(e))) return 'challenge';
@@ -114,6 +154,7 @@
       const errors = [...document.querySelectorAll('.ivu-message-error')].filter(visible);
       if (errors.some(e => /(?:账号|帐号|账户|密码|用户名).*(?:错误|不正确|不存在|锁定|禁用|停用)/.test(e.textContent || ''))) return 'rejected';
       if (errors.length) return 'unavailable';
+      if (optionalNoticeAction()) return 'optional-notice';
       if ([...document.querySelectorAll('.ivu-modal')].some(visible) ||
           !['','#','#/'].includes(location.hash)) return 'notice';
       return identify(true) ? 'form' : 'loading';

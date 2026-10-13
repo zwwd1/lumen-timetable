@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.tyust.course.LoginActivity
+import kotlinx.coroutines.launch
 import com.tyust.course.login.PasswordLoginCallback
 import com.tyust.course.login.PasswordLoginGatewayFactory
 import com.tyust.course.manager.AppearanceSettingsManager
@@ -94,6 +95,7 @@ fun SettingsRoute(
     val context = LocalContext.current
     val isDemoMode = remember { UserManager.getInstance().isDemoMode }
 
+    val settingsScope=rememberCoroutineScope()
     var studentName by remember { mutableStateOf("") }
     var deviceId by remember { mutableStateOf("") }
     var schoolName by remember { mutableStateOf("") }
@@ -184,11 +186,14 @@ fun SettingsRoute(
         quotaAccounts = userManager.accountsForCurrentSchool
         allAccounts = userManager.savedAccounts
         accountsWithPassword = allAccounts
-            .filter { userManager.hasSavedPassword(it.key) }
+            .filter { record -> userManager.hasSavedPassword(record.key) ||
+                (record.schoolId=="scvtc" && cn.scvtc.campus.OfficialLoginMemory(context)
+                    .inputPassword(record.studentId.orEmpty().ifBlank{record.username.orEmpty()}).isNotEmpty()) }
             .map { it.key }
             .toSet()
         currentAccountKey = userManager.currentAccountKey
-        canRefreshCookie = userManager.loginMode == "password"
+        canRefreshCookie = userManager.loginMode == "password" ||
+            (userManager.currentSchool?.id=="scvtc" && com.tyust.course.scvtc.ScvtcRuntime.canRestoreFrameworkSession())
         quotaInfo = if (isSuper) {
             "无限制"
         } else {
@@ -225,13 +230,22 @@ fun SettingsRoute(
 
     /** 只删密码：账号还在，但不再自动续期，下次失效需要手动登录。 */
     fun deleteAccountPassword(record: UserManager.AccountRecord) {
+        settingsScope.launch {
+        if(record.schoolId=="scvtc") {
+            val account=record.studentId.orEmpty().ifBlank{record.username.orEmpty()}
+            if(account==com.tyust.course.scvtc.ScvtcRuntime.account)com.tyust.course.scvtc.ScvtcRuntime.cancelSignIn()
+            cn.scvtc.campus.OfficialLoginMemory(context).clearRememberedPassword(account)
+        }
         UserManager.getInstance().deletePassword(record.key)
         refreshAccountUiState()
         GlassToaster.show("已删除该账号保存的密码")
+        }
     }
 
     /** 彻底删号：账号记录 + 已存密码 + 运行期 Cookie + 本地课程缓存。 */
     fun deleteAccountEntirely(record: UserManager.AccountRecord) {
+        if(record.schoolId=="scvtc")cn.scvtc.campus.OfficialLoginMemory(context)
+            .forget(record.studentId.orEmpty().ifBlank{record.username.orEmpty()})
         val userManager = UserManager.getInstance()
         val isCurrent = record.key == userManager.currentAccountKey
         val storageKey = userManager.deleteAccount(record.key)
@@ -523,7 +537,7 @@ fun SettingsRoute(
                 com.tyust.course.ui.system.SystemDivider()
 
                 Text(
-                    text = "璟 · 项目维护与协作",
+                    text = "Lumen 课程表 · 项目维护与协作",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -933,7 +947,8 @@ private fun AccountManagerDialog(
                                     )
                                     Text(
                                         text = "${account.accountIdText} · " +
-                                            if (account.loginMode == "password") "密码登录" else "Cookie 登录",
+                                            if (account.schoolId=="scvtc"&&hasPassword) "本机自动登录"
+                                            else if (account.loginMode == "password") "密码登录" else "Cookie 登录",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )

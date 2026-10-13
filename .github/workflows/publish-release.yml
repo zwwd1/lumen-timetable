@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Verify plugin platform consistency
-        if: github.event.repository.name == 'scvtc-zhixue'
+        if: github.event.repository.name == 'scvtc-zhixue' || github.event.repository.name == 'lumen-timetable'
         run: python3 scripts/check_plugin_platform.py
       - name: Verify and publish the original signed local APK
         env:

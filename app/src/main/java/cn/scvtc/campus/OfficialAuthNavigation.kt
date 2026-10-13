@@ -7,7 +7,13 @@ import cn.scvtc.campus.core.School
  * a student login. Only the real student API can complete authentication. */
 class OfficialAuthNavigation {
     private var returned=false
-    fun reset(){returned=false}
+    private var restored=false
+    fun reset(){returned=false;restored=false}
+    fun restoreService():String? {
+        if(restored)return null
+        restored=true
+        return CasAuthManager.JWXT_SSO_ENTRY
+    }
     fun continueFrom(page:String):String? {
         if(returned||!isCasLanding(page))return null
         returned=true

@@ -88,4 +88,28 @@ class JwxtSessionRecoveryTest {
             assertEquals(0,recoveries)
         }
     }
+
+    @Test fun transientHttpFailureReachesBackgroundRetryWithoutPasswordSubmission()=runBlocking {
+        for(status in listOf(408,429,500,502,503,504)) {
+            var requests=0;var recoveries=0
+            val session=JwxtSessionManager(api { requests++;status to "<html>Temporarily unavailable</html>" }){recoveries++}
+            val result=cn.scvtc.campus.core.executeBackgroundSync(0) {
+                session.verifiedStudent("2026000001")
+                cn.scvtc.campus.core.BackgroundSyncOutcome(true)
+            }
+            assertEquals(cn.scvtc.campus.core.BackgroundSyncResult.RETRY,result)
+            assertEquals(1,requests);assertEquals(0,recoveries)
+        }
+    }
+
+    @Test fun malformedSuccessIsAProtocolFailureAndDoesNotLoopInBackground()=runBlocking {
+        var requests=0;var recoveries=0
+        val session=JwxtSessionManager(api { requests++;200 to "broken JSON" }){recoveries++}
+        val result=cn.scvtc.campus.core.executeBackgroundSync(0) {
+            session.verifiedStudent("2026000001")
+            cn.scvtc.campus.core.BackgroundSyncOutcome(true)
+        }
+        assertEquals(cn.scvtc.campus.core.BackgroundSyncResult.FAILED,result)
+        assertEquals(1,requests);assertEquals(0,recoveries)
+    }
 }

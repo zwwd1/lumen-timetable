@@ -5,6 +5,9 @@ import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import androidx.work.*
+import cn.scvtc.campus.core.BackgroundSyncOutcome
+import cn.scvtc.campus.core.BackgroundSyncResult
+import cn.scvtc.campus.core.executeBackgroundSync
 import com.tyust.course.manager.UserManager
 import kotlinx.coroutines.*
 import java.util.concurrent.TimeUnit
@@ -68,15 +71,17 @@ class ScvtcSyncWorker(context: Context, params: WorkerParameters) : CoroutineWor
         val t=inputData.getString("semester")?:ScvtcRuntime.semester
         if (a!=ScvtcRuntime.account || t!=ScvtcRuntime.semester) return Result.failure(workDataOf("code" to "SCOPE_CHANGED"))
         applicationContext.getSharedPreferences("scvtc_profile",0).edit().putLong("lastAttempt",System.currentTimeMillis()).apply()
-        return try {
-            ScvtcRuntime.synchronize()
-            Result.success(workDataOf("code" to "SAVED"))
-        } catch (e: CancellationException) { throw e }
-        catch (e: Exception) {
-            val message=e.message.orEmpty()
-            val needsUser=message.contains("AUTH_REQUIRED") || message.contains("认证") || message.contains("账号") || message.contains("解析") || message.contains("结构")
-            if (!needsUser && runAttemptCount<3) Result.retry()
-            else Result.failure(workDataOf("code" to if(needsUser)"AUTH_OR_PROTOCOL" else "RETRY_LIMIT"))
+        return when (executeBackgroundSync(runAttemptCount) {
+            try {
+                ScvtcRuntime.synchronize()
+                BackgroundSyncOutcome(saved = true)
+            } catch (_: TimeoutCancellationException) {
+                BackgroundSyncOutcome(saved = false, retryable = true)
+            }
+        }) {
+            BackgroundSyncResult.SAVED -> Result.success(workDataOf("code" to "SAVED"))
+            BackgroundSyncResult.RETRY -> Result.retry()
+            BackgroundSyncResult.FAILED -> Result.failure(workDataOf("code" to "NOT_SAVED"))
         }
     }
 }
