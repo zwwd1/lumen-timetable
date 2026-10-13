@@ -8,6 +8,14 @@
 
 [下载 APK](https://github.com/zwwd1/lumen-timetable/releases/latest) · [反馈问题](https://github.com/zwwd1/lumen-timetable/issues) · [更新记录](release-notes/v1.2.7.md)
 
+## 看图上手
+
+<img src="docs/images/login.jpg" width="220" alt="Lumen 真机登录页，输入为空">
+<img src="docs/images/schedule-settings.jpg" width="220" alt="Lumen 真机课表设置">
+<img src="docs/images/grades-empty.png" width="220" alt="Lumen 真机空学期成绩">
+
+[图文使用说明](docs/SCVTC_USAGE.md) 从首次登录开始，说明课表设置、成绩切换、外观和后台同步。截图来自 10 月 10 至 12 日的用户手机与实机调试，早于本次英文改名与使用指南更新。
+
 ## 能做什么
 
 首次安装会邀请你登录川职教务。输入学号与学校密码，应用在后台建立学校会话并核验身份；通过后便返回应用，课表先保存，其他服务随后读取。等待中可以取消或转到官方页面。密码在本机按账号加密记住，登录过期后尝试自动恢复；验证码与账号安全提示在学校页面完成。
@@ -50,4 +58,4 @@
 
 ## 致谢项目
 
-川职 Next、Miuix、AndroidLiquidGlass，以及浏览器、地图和模型组件的开源维护者。源码与第三方组件许可见 [LICENSE](LICENSE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+川职 Next、Miuix、AndroidLiquidGlass，以及浏览器、地图和模型组件的开源维护者。源码与第三方组件许可见 [LICENSE](LICENSE) 和 [SCVTC-NOTICES.md](SCVTC-NOTICES.md)。
