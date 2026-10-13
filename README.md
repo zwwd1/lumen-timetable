@@ -10,9 +10,11 @@
 
 ## 看图上手
 
+<p align="center">
 <img src="docs/images/login.jpg" width="220" alt="Lumen 真机登录页，输入为空">
 <img src="docs/images/schedule-settings.jpg" width="220" alt="Lumen 真机课表设置">
 <img src="docs/images/grades-empty.png" width="220" alt="Lumen 真机空学期成绩">
+</p>
 
 [图文使用说明](docs/SCVTC_USAGE.md) 从首次登录开始，说明课表设置、成绩切换、外观和后台同步。截图来自 10 月 10 至 12 日的用户手机与实机调试，早于本次英文改名与使用指南更新。
 
