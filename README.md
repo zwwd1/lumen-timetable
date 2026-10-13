@@ -1,14 +1,14 @@
-# 璟
+# Lumen 课程表
 
-> 课业有迹，日常有光。
+智慧川职有些地方用着实在别扭。查课表、找成绩，看起来都是很小的事，点来点去却挺磨人。我想把这些东西放得顺手一点，于是折腾出了 Lumen 课程表。
 
-璟（jǐng），是玉的光彩。愿每一段认真走过的日子，都留下自己的微光。
+这是自己随心而动的作品，希望能帮到川职院的同辈。它沿用川职 Next 的课程和插件架构，把课表、成绩、考试、学分与校园服务放在一起；比 Gnomon 更侧重教务信息，已经读到的内容也能离线看。
 
-这是为四川职业技术学院重构的 Android 教务应用，基于川职 Next 的课程与插件架构。它把课表、成绩、学分和学校服务放在一起，适合希望少切几个页面、把学业看得更清楚的同学。
+我不会实时维护，更新要看时间和精力。学校以后改登录方式或接口，应用可能会失效，也不保证立刻有人修。遇到了可以自己 fork，自行 vibe coding；源码和构建方法都留着，想怎么改就动手试试。
 
-[下载 APK](https://github.com/zwwd1/scvtc-zhixue/releases/latest) · [反馈问题](https://github.com/zwwd1/scvtc-zhixue/issues) · [更新记录](release-notes/v1.2.7.md)
+[下载 APK](https://github.com/zwwd1/lumen-timetable/releases/latest) · [反馈问题](https://github.com/zwwd1/lumen-timetable/issues) · [更新记录](release-notes/v1.2.7.md)
 
-## 连接学校，回到日常
+## 能做什么
 
 首次安装会邀请你登录川职教务。输入学号与学校密码，应用在后台建立学校会话并核验身份；通过后便返回应用，课表先保存，其他服务随后读取。等待中可以取消或转到官方页面。密码在本机按账号加密记住，登录过期后尝试自动恢复；验证码与账号安全提示在学校页面完成。
 
@@ -20,9 +20,9 @@
 
 ## 两个项目，侧重不同
 
-[晷](https://github.com/zwwd1/scvtc-kejian) 从课表出发，保留 SleepDown 的课程与作息体验；璟把课表和更多教务服务连接起来。两者各自保存本机数据，云服务暂停。
+[Gnomon 课程表](https://github.com/zwwd1/gnomon-timetable) 从课表出发，保留 SleepDown 的课程与作息体验；Lumen 课程表把课表和更多教务服务连接起来。两者各自保存本机数据，云服务暂停。
 
-## 代码里的来路
+## 实现
 
 `cn/scvtc/campus` 负责学校认证和教务接口，`com/tyust/course/scvtc` 负责同步、服务入口与数据投影，`school-core` 维护课程和导入规则。学校返回的数据校验后写入 Room，再交给原生页面展示。同步合并学校变更时保留用户编辑，查询失败保留缓存。
 
@@ -46,7 +46,7 @@
 
 构建会输出各架构 APK 与通用包。专用内核、推理代码和模型位于 `app/src/platform`；本校页面与系统 WebView 认证共用 `app/src/main`。正式更新沿用第一版包名和签名；自行签名的包不能覆盖正式版。密钥留在仓库外，见构建说明。完整插件平台保留 [平台一致性检查](spec/PLUGIN-PLATFORM-RELEASE.md)。
 
-[GitHub Release](https://github.com/zwwd1/scvtc-zhixue/releases) 提供安装包、源码标签与 SHA-256。[验证记录](VERIFICATION.md) 说明完成了哪些检查，哪些仍待手机确认。
+[GitHub Release](https://github.com/zwwd1/lumen-timetable/releases) 提供安装包、源码标签与 SHA-256。[验证记录](VERIFICATION.md) 说明完成了哪些检查，哪些仍待手机确认。
 
 ## 致谢项目
 
