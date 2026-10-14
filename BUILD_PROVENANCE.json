@@ -1,14 +1,14 @@
 {
   "version": "1.2.11",
-  "sourceCommit": "88701b532c3a91ee6cde9d508557c03be00b261c",
+  "sourceCommit": "c1426fe42b8169962a0d6b49f3ec9d450831ce24",
   "sourceRepository": "zwwd1/lumen-timetable",
   "artifact": {
     "file": "Lumen-Timetable-1.2.11.apk",
     "packageName": "cn.scvtc.campus.next",
     "versionCode": 20,
     "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
-    "size": 18484818,
-    "sha256": "69f86f9b747c3b39ac0623ead83ddc796ac63224053cfb85f6afc35bd74f42eb",
+    "size": 18500722,
+    "sha256": "752ccbf78c95d1b4295f3af174353920fe638794b68874d72631547acd1404f3",
     "abi": "arm64-v8a"
   },
   "releaseBuild": "passed",
@@ -29,12 +29,12 @@
     "r8Mapping": true,
     "appName": true
   },
-  "localBuildInputsSha256": "0f23f69d7a6fb712943af2fe1738f0021a3d1c5366e14939fbc3184a5f0c6573",
+  "localBuildInputsSha256": "33d7be3930443adb14116ff607b503a22a4488eb50c0715e4d4be65b0f2e7cc4",
   "sourceGitMatch": {
     "contentDifferent": 0,
     "lineEndingsOnly": 690
   },
-  "mappingId": "efc8a4cedc8f612e00ba868a98dc26c524e9da0bce01b6ed1302c54696f2f968",
+  "mappingId": "32a3fe79c66d09c974f295689f79b32b02f865b67bae467d2c86f6a920a87982",
   "deviceTests": "not_run_device_not_connected",
   "additionalArtifacts": []
 }
