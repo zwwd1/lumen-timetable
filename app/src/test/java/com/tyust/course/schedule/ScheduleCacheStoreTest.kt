@@ -12,6 +12,34 @@ class ScheduleCacheStoreTest {
     private fun saved(term: AcademicTerm = current, body: String = json) = CachedSchedule(current, term, body, false)
     private fun noNetwork(): AcademicStudyAdapter = error("A cached login must not open the network reader")
 
+    @Test fun confirmedCancellationOfLastWeekStaysEmptyAfterReopening() = runTest {
+        val prefs = MemoryPreferences(); val cache = store(prefs)
+        val old = cn.scvtc.campus.core.Extraction("schedule", "a", current.id,
+            meetings = listOf(cn.scvtc.campus.core.Meeting(name = "数学", day = 1,
+                startNode = 1, endNode = 2, weeks = listOf(6))), coverageWeeks = (1..28).toList(), full = true)
+        ScvtcScheduleProjection.save(cache, "a", old, 1234L)
+        val committed = cn.scvtc.campus.core.MergeRules.merge(old,
+            old.copy(meetings = emptyList(), coverageWeeks = listOf(6), emptyConfirmed = true))
+        assertTrue(committed.meetings.isEmpty())
+        assertTrue(ScvtcScheduleProjection.canRestore(committed, "a", current.id))
+        assertFalse(ScvtcScheduleProjection.canRestore(committed, "b", current.id))
+        ScvtcScheduleProjection.save(cache, "a", committed, 5678L)
+        val reopened = requireNotNull(store(prefs).read("a", "scvtc", current))
+        assertTrue(requireNotNull(ScheduleJson.parse(reopened)).isEmpty())
+        assertEquals(5678L, prefs.getLong("schedule_a_scvtc_${current.id}_time", 0))
+    }
+
+    @Test fun unconfirmedEmptySnapshotDoesNotResurrectOrReplaceData() {
+        val prefs = MemoryPreferences(); val cache = store(prefs)
+        cache.save("a", "scvtc", saved(), 1234L)
+        val empty = cn.scvtc.campus.core.Extraction("schedule", "a", current.id, coverageWeeks = (1..28).toList(), full = true)
+        assertFalse(ScvtcScheduleProjection.canRestore(empty, "a", current.id))
+        try { ScvtcScheduleProjection.save(cache, "a", empty, 5678L); fail("Unconfirmed snapshot accepted") }
+        catch (_: IllegalArgumentException) { }
+        assertEquals(json, cache.read("a", "scvtc", current))
+        assertEquals(1234L, prefs.getLong("schedule_a_scvtc_${current.id}_time", 0))
+    }
+
     @Test fun scvtcEmptyRefreshKeepsCoursesAndSuccessfulTimestamp() {
         val prefs=MemoryPreferences();val cache=store(prefs)
         cache.save("a","scvtc",saved(),1234L)

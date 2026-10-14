@@ -73,13 +73,13 @@ class ScvtcSyncWorker(context: Context, params: WorkerParameters) : CoroutineWor
         applicationContext.getSharedPreferences("scvtc_profile",0).edit().putLong("lastAttempt",System.currentTimeMillis()).apply()
         return when (executeBackgroundSync(runAttemptCount) {
             try {
-                ScvtcRuntime.synchronize()
+                ScvtcRuntime.synchronizeBackground(runAttemptCount)
                 BackgroundSyncOutcome(saved = true)
             } catch (_: TimeoutCancellationException) {
                 BackgroundSyncOutcome(saved = false, retryable = true)
             }
         }) {
-            BackgroundSyncResult.SAVED -> Result.success(workDataOf("code" to "SAVED"))
+            BackgroundSyncResult.SAVED -> Result.success(workDataOf("code" to if(ScvtcRuntime.syncState.value.stage==NativeSyncStage.PARTIAL)"SCHEDULE_SAVED_SERVICES_PARTIAL"else"SAVED"))
             BackgroundSyncResult.RETRY -> Result.retry()
             BackgroundSyncResult.FAILED -> Result.failure(workDataOf("code" to "NOT_SAVED"))
         }

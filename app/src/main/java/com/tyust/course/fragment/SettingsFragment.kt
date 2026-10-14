@@ -155,20 +155,8 @@ class SettingsFragment : Fragment() {
     }
 
     private fun handleAbout() {
-        val message = buildString {
-            append("更新日志\n\n")
-            append("• 2026-06-06: 修复版本号锁死导致的应用更新检测失效；拦截器引入高精度重定向检测，彻底解决太理工等统一身份认证学校 Cookie 过期无提示的问题；GradesRoute 新增过期广播联动\n")
-            append("• 2026-06-05: 引入全局 Cookie 有效性检查器提升稳定性；优化 JSON 响应过期拦截与自动唤起登录提示\n")
-            append("• 2026-06-04: 修复平时成绩显示Bug，支持CSV单导出；添加登录平台指引；增加防误触 Star 弹窗（最多弹3次不同内容）；设置页关于改版为更新历史与致谢\n")
-            append("• 2026-06-03: 清理内部文档与更新配置\n")
-            append("• 2026-06-02: 优化滚动体验防止内容遮挡，重构 README\n")
-            append("• 2026-06-01: 修复底栏点击失效与液态裁切问题\n")
-            append("• 2026-05-31: 引入液态玻璃 UI 重构 (v1.0.54)\n")
-            append("• 2026-05-26: 优化卡片，修复退课接口与日历分享崩溃\n")
-            append("• 2026-05-25: 升级新拟态玻璃化 UI，优化课表\n")
-            append("• 2026-04-18: 成绩查询优化，增强限流与指纹安全\n")
-            append("• 2026-04-09: 深度 UI/UX 重构，极简系统工具风\n\n")
-            append("本应用仅供学习交流使用")
+        val message = cn.scvtc.campus.ReleaseHistory.local(requireContext()).joinToString("\n\n") {
+            it.version + " · " + it.date + "\n" + cn.scvtc.campus.ReleaseHistory.plainNotes(it.body)
         }
         AlertDialog.Builder(context)
             .setTitle("更新历史")

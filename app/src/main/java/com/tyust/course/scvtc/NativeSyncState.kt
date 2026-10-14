@@ -5,7 +5,7 @@ import android.net.ConnectivityManager
 import java.text.DateFormat
 import java.util.Date
 
-enum class NativeSyncStage { NONE, PREPARING, AUTHENTICATING, READING, WRITING, SUCCESS, FAILED, OFFLINE, AUTH_REQUIRED, CACHE }
+enum class NativeSyncStage { NONE, PREPARING, AUTHENTICATING, READING, WRITING, SUCCESS, PARTIAL, FAILED, OFFLINE, AUTH_REQUIRED, CACHE }
 data class NativeSyncState(
     val stage:NativeSyncStage=NativeSyncStage.NONE,val operation:String="课表",val lastAttempt:Long=0,
     val lastSuccess:Long=0,val message:String="尚未同步",val account:String="",val term:String="",
@@ -32,6 +32,7 @@ internal class NativeSyncProgress(private val context:Context) {
     fun phase(stage:NativeSyncStage,message:String){state.value=state.value.copy(stage=stage,message=message)}
     fun committed(time:Long){prefs.edit().putLong("success:$key",time).apply();state.value=state.value.copy(lastSuccess=time)}
     fun complete(){phase(NativeSyncStage.SUCCESS,"同步成功")}
+    fun partial(message:String){phase(NativeSyncStage.PARTIAL,message)}
     fun failure(error:Exception){
         val auth=error is cn.scvtc.campus.JwxtAuthenticationRequired
         val offline=context.getSystemService(ConnectivityManager::class.java).activeNetwork==null

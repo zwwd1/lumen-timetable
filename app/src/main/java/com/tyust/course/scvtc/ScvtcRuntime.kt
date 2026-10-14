@@ -255,16 +255,23 @@ object ScvtcRuntime {
   db.withTransaction {
    check(current()){"账号、学期或查询已改变"}
    db.schedules().put(ScvtcSnapshot(a,t,encode(merged),fetchedAt,sealed))
-   withContext(Dispatchers.Main){check(current());project(merged,finishBatch,fetchedAt)}
    check(current())
   }
+  check(current())
+  project(merged,finishBatch,fetchedAt)
   withContext(Dispatchers.Main){revision.value++;status.value="已保存 ${merged.meetings.size} 个课程安排 · 已读取 ${merged.coverageWeeks.size} 周"}
   cn.scvtc.campus.CloudBackup.get(context).publish(merged,System.currentTimeMillis())
   merged
  }
  suspend fun service(module:String,term:String=semester):Extraction?=db.services().read(account,term,module)?.let{decode(it.account,it.semester,it.module,it.payload)}
  suspend fun allGrades():Extraction?=service("grades","all")?:service("grades")
- suspend fun serviceSavedAt(module:String):Long=db.services().read(account,semester,module)?.fetchedAt?:0
+ suspend fun serviceSavedAt(module:String,a:String=account,t:String=semester):Long=db.services().read(a,t,module)?.fetchedAt?:0
+ private val serviceStatus get()=ServiceReadStatusStore(context.getSharedPreferences("school_service_status",0))
+ internal suspend fun serviceStatuses(a:String=account,t:String=semester):List<ServiceReadStatus> =
+  (listOf("authentication","schedule")+cn.scvtc.campus.JwxtServices.endpoints.keys).map{module->
+   val savedAt=when(module){"authentication"->0L;"schedule"->db.schedules().read(a,t)?.fetchedAt?:0L;else->db.services().read(a,t,module)?.fetchedAt?:0L}
+   serviceStatus.read(a,t,module,savedAt)
+  }
  suspend fun saveService(next:Extraction,replace:Boolean,valid:()->Boolean):Extraction=mutex.withLock{
   require(next.module!="schedule"&&next.account==account&&next.semester==semester)
   require(next.warnings.isEmpty() && (next.records.isNotEmpty()||next.links.isNotEmpty()||next.full&&next.emptyConfirmed)){"服务页尚无可识别记录，原记录保留"}
@@ -287,8 +294,8 @@ object ScvtcRuntime {
   if(a.isBlank()||t.isBlank())return@withLock false
   val saved=db.schedules().read(a,t)
   val local=saved?.let{runCatching{decode(a,t,"schedule",it.payload)}.getOrNull()}
-  if(local!=null && local.account==a && local.semester==t && local.meetings.isNotEmpty()){
-   withContext(Dispatchers.Main){if(a==account && t==semester){project(local,true,saved.fetchedAt);revision.value++}}
+  if(local!=null && ScvtcScheduleProjection.canRestore(local,a,t)){
+   if(a==account && t==semester){project(local,true,saved.fetchedAt);withContext(Dispatchers.Main){revision.value++}}
    return@withLock false
   }
   val backup=prefs.getString(backupKey(a,t),null)?:return@withLock false
@@ -297,25 +304,31 @@ object ScvtcRuntime {
   ScheduleWriteGuard.validate(null,e)
   val fetchedAt=prefs.getLong(backupKey(a,t)+":time",0L)
   db.withTransaction{check(a==account&&t==semester);db.schedules().put(ScvtcSnapshot(a,t,encode(e),fetchedAt,saved?.recipe.orEmpty()))}
-  withContext(Dispatchers.Main){if(a==account&&t==semester){project(e,true,fetchedAt);revision.value++;status.value="已恢复上一份有效课表"}};true
+  if(a==account&&t==semester){project(e,true,fetchedAt);withContext(Dispatchers.Main){revision.value++;status.value="已恢复上一份有效课表"}};true
  }
- private fun project(e:Extraction,finishBatch:Boolean,fetchedAt:Long){
+ private suspend fun project(e:Extraction,finishBatch:Boolean,fetchedAt:Long)=withContext(Dispatchers.IO){
   val user=UserManager.getInstance()
   val active=user.currentSchool?.id=="scvtc" && user.studentId==e.account
   val key=if(active)user.currentAccountStorageKey else "scvtc__${e.account}"
   val entries=e.meetings.map{AcademicScheduleEntry(it.name,it.teacher,it.room,it.day,it.startNode,it.endNode,it.weeks.joinToString("、"),it.stableId())}
-  val term=AcademicTerm(e.semester)
-  ScheduleCacheStore(context.getSharedPreferences("schedule_cache",Context.MODE_PRIVATE)).save(key,"scvtc",CachedSchedule(term,term,AcademicStudyBridge.scheduleJson(entries),false),fetchedAt)
-  if(finishBatch && active){ScheduleWidgetUpdater.update(context);ScheduleJson.parse(AcademicStudyBridge.scheduleJson(entries))?.let{ScheduleReminderScheduler.get(context).updateSnapshot(key,e.semester,it.map{entry->entry.course})}}
+  ScvtcScheduleProjection.save(ScheduleCacheStore(context.getSharedPreferences("schedule_cache",Context.MODE_PRIVATE)),key,e,fetchedAt)
+  if(finishBatch && active)withContext(Dispatchers.Main){ScheduleWidgetUpdater.update(context);ScheduleJson.parse(AcademicStudyBridge.scheduleJson(entries))?.let{ScheduleReminderScheduler.get(context).updateSnapshot(key,e.semester,it.map{entry->entry.course})}}
+ }
+ internal suspend fun synchronizeBackground(attempt:Int){
+  val a=account;val t=semester
+  val modules=serviceRetryModules(attempt,db.schedules().read(a,t)?.fetchedAt?:0L,serviceStatuses(a,t))
+  if(modules.isEmpty())synchronize()else readServices(modules,a,t)
  }
  suspend fun synchronize(mode:String="range"):Extraction=networkMutex.withLock {
   val requestedAccount=account;val requestedSemester=semester
   require(requestedAccount.isNotBlank() && requestedSemester.isNotBlank()){"请先打开官方课表并确认账号和学期"}
   progress.begin(requestedAccount,requestedSemester,cachedAt=snapshot()?.fetchedAt?:0)
   status.value="正在同步课表"
+  var activeModule="authentication"
+  serviceStatus.begin(requestedAccount,requestedSemester,activeModule)
   try {
    restoreLastGood()
-   if(extraction()?.meetings.isNullOrEmpty())cn.scvtc.campus.CloudBackup.get(context).restore(requestedAccount,requestedSemester)?.let{save(it)}
+   if(extraction()==null)cn.scvtc.campus.CloudBackup.get(context).restore(requestedAccount,requestedSemester)?.let{save(it)}
    require(mode in setOf("range","weekly"))
    val login=cn.scvtc.campus.OfficialLoginMemory(context)
    progress.phase(NativeSyncStage.AUTHENTICATING,"正在认证学校账号…")
@@ -327,6 +340,8 @@ object ScvtcRuntime {
     fun current()=requestedAccount==account&&requestedSemester==semester
     check(current()){"账号或学期已切换"}
     login.confirmed(requestedAccount)
+    serviceStatus.saved(requestedAccount,requestedSemester,"authentication",System.currentTimeMillis())
+    activeModule="schedule";serviceStatus.begin(requestedAccount,requestedSemester,activeModule)
     progress.phase(NativeSyncStage.READING,"正在读取真实课表…")
     val (calendar,weeks)=api.calendar()
     require(calendar.semester==requestedSemester){"官方学期已改变，请确认新学期；原课表保留"}
@@ -340,6 +355,7 @@ object ScvtcRuntime {
      progress.phase(NativeSyncStage.WRITING,"正在保存课表…")
      result=save(response.extraction,response.recipe,index==ranges.lastIndex,::current)
      progress.committed(snapshot()?.fetchedAt?:error("课表事务未完成"))
+     serviceStatus.saved(requestedAccount,requestedSemester,"schedule",snapshot()?.fetchedAt?:0L)
      progress.phase(NativeSyncStage.READING,"正在读取后续教务数据…")
     }
     withContext(Dispatchers.Main){
@@ -348,35 +364,39 @@ object ScvtcRuntime {
      if(base.firstWeekDate.isBlank())setFirstMonday(calendar.firstMonday)
      status.value="课表和学生信息已保存，正在同步成绩与考试"
     }
-    var completed=0;var failed=0;var transientFailure:java.io.IOException?=null
-    for(module in cn.scvtc.campus.JwxtServices.endpoints.keys){
+    val services=readServiceBatch(cn.scvtc.campus.JwxtServices.endpoints.keys.toList(),{module->
      currentCoroutineContext().ensureActive();check(current())
-     try {
+     activeModule=module;serviceStatus.begin(requestedAccount,requestedSemester,module)
+     progress.phase(NativeSyncStage.READING,"正在读取${School.service(module)?.title?:"教务数据"}…")
       saveService(api.service(module,requestedAccount,requestedSemester),true,::current)
-      context.getSharedPreferences("school_service_status",0).edit().putString("$requestedAccount:$requestedSemester:$module","saved").apply()
-      completed++
-     }catch(e:CancellationException){throw e}catch(e:Exception){
-      failed++;context.getSharedPreferences("school_service_status",0).edit().putString("$requestedAccount:$requestedSemester:$module",if(e is cn.scvtc.campus.JwxtAuthenticationRequired)"auth-required"else"failed").apply()
-      if(e is cn.scvtc.campus.JwxtAuthenticationRequired)throw e
-      if(e is java.io.IOException)transientFailure=e
-     }
-    }
-    status.value="已保存 ${weeks.size} 周课表与学生信息；$completed 项服务完成"+if(failed>0)"，$failed 项未完成，原缓存保留"else""
-    transientFailure?.let { throw it }
-    progress.complete()
+      serviceStatus.saved(requestedAccount,requestedSemester,module,serviceSavedAt(module,requestedAccount,requestedSemester))
+    },{module,e->
+      serviceStatus.failed(requestedAccount,requestedSemester,module,e)
+    })
+    activeModule=""
+    status.value="已保存 ${weeks.size} 周课表与学生信息；${services.saved.size} 项服务完成"+if(services.failed.isNotEmpty())"，${services.failed.size} 项未完成，原缓存保留"else""
+    if(!services.complete)progress.partial("课表已更新；${services.failed.joinToString("、"){School.service(it)?.title?:"教务数据"}}未更新，保留上次记录")
+    services.retryableFailure?.let { throw it }
+    if(services.complete)progress.complete()
     result?:error("课表读取未完成")
    }
   }
   catch(e:CancellationException){progress.phase(NativeSyncStage.CACHE,"已停止 · 使用本机缓存");throw e}
-  catch(e:Exception){progress.failure(e);status.value="同步未完成，已保留离线课表";throw e}
+  catch(e:Exception){
+   if(activeModule.isNotBlank())serviceStatus.failed(requestedAccount,requestedSemester,activeModule,e)
+   if(e is cn.scvtc.campus.JwxtAuthenticationRequired)serviceStatus.failed(requestedAccount,requestedSemester,"authentication",e)
+   if(progress.state.value.stage!=NativeSyncStage.PARTIAL){progress.failure(e);status.value="同步未完成，已保留离线课表"}
+   throw e
+  }
  }
  suspend fun synchronizeService(module:String):Extraction=serviceRead(listOf(module)).await().getValue(module)
  private suspend fun readServices(modules:List<String>,a:String,t:String):Map<String,Extraction> = networkMutex.withLock{
   require(modules.isNotEmpty()&&modules.all{it in cn.scvtc.campus.JwxtServices.endpoints})
   require(a.isNotBlank()&&t.isNotBlank()){"请先连接学校教务"}
   check(a==account&&t==semester){"账号或学期已切换"}
-  progress.begin(a,t,if(modules.size>1)"成绩与学分"else School.service(modules.single())?.title?:"教务数据",serviceSavedAt(modules.first()))
+  progress.begin(a,t,if(modules.size>1)"教务数据"else School.service(modules.single())?.title?:"教务数据",serviceSavedAt(modules.first(),a,t))
   progress.phase(NativeSyncStage.AUTHENTICATING,"正在认证学校账号…")
+  serviceStatus.begin(a,t,"authentication")
   try {
   val login=cn.scvtc.campus.OfficialLoginMemory(context);login.restoreSession(a)
   val api=cn.scvtc.campus.JwxtApi(headers={url->login.apiHeaders(a,url)})
@@ -384,21 +404,32 @@ object ScvtcRuntime {
   cn.scvtc.campus.JwxtSessionManager(api,auth::restoreJwxt).withSession(a){
    check(a==account&&t==semester)
    login.confirmed(a)
+   serviceStatus.saved(a,t,"authentication",System.currentTimeMillis())
    progress.phase(NativeSyncStage.READING,"正在读取真实教务数据…")
    val results=linkedMapOf<String,Extraction>()
-   for(module in modules){
+   val batch=readServiceBatch(modules,{module->
     currentCoroutineContext().ensureActive();check(a==account&&t==semester)
+    serviceStatus.begin(a,t,module)
     progress.phase(NativeSyncStage.READING,"正在读取${School.service(module)?.title?:"教务数据"}…")
     val result=api.service(module,a,t)
     progress.phase(NativeSyncStage.WRITING,"正在保存教务数据…")
     results[module]=saveService(result,true){a==account&&t==semester}
-    progress.committed(serviceSavedAt(module))
+    progress.committed(serviceSavedAt(module,a,t))
+    serviceStatus.saved(a,t,module,serviceSavedAt(module,a,t))
+   },{module,e->serviceStatus.failed(a,t,module,e)})
+   if(!batch.complete){
+    if(batch.saved.isNotEmpty())progress.partial("${batch.saved.joinToString("、"){School.service(it)?.title?:it}}已更新；其余保留上次记录")
+    throw batch.retryableFailure?:IllegalStateException("部分教务数据未更新，原缓存保留")
    }
-   progress.complete();status.value=if(modules.size>1)"成绩与学分已更新"else"${School.service(modules.single())?.title?:"教务数据"}已更新"
+   progress.complete();status.value=modules.joinToString("、"){School.service(it)?.title?:"教务数据"}+"已更新"
    results
   }
   }catch(e:CancellationException){progress.phase(NativeSyncStage.CACHE,"已停止 · 使用本机缓存");throw e}
-  catch(e:Exception){progress.failure(e);throw e}
+  catch(e:Exception){
+   if(e is cn.scvtc.campus.JwxtAuthenticationRequired)serviceStatus.failed(a,t,"authentication",e)
+   if(progress.state.value.stage!=NativeSyncStage.PARTIAL)progress.failure(e)
+   throw e
+  }
  }
  fun cachedSemesters():List<String> = org.json.JSONArray(prefs.getString("officialTerms:$account","[]")).let { list ->
   (0 until list.length()).map { list.getString(it) }

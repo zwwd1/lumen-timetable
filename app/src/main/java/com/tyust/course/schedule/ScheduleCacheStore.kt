@@ -45,7 +45,11 @@ internal class ScheduleCacheStore(
         }
         return keys.firstNotNullOfOrNull { key ->
             runCatching { preferences.getString(key, null) }.getOrNull()
-                ?.takeIf { ScheduleJson.parse(it) != null && (school!="scvtc" || ScheduleJson.parse(it)!!.isNotEmpty() || key.endsWith("_last_good")) }
+                ?.takeIf { json ->
+                    val courses = ScheduleJson.parse(json)
+                    courses != null && (school != "scvtc" || courses.isNotEmpty() ||
+                        preferences.getString("${base}_${term.id}_confirmed_empty", null) == cn.scvtc.campus.core.digest(json))
+                }
         }
     }
 
@@ -86,17 +90,18 @@ internal class ScheduleCacheStore(
         }
     }
 
-    fun save(account: String, school: String, schedule: CachedSchedule, fetchedAt: Long = System.currentTimeMillis()) {
+    fun save(account: String, school: String, schedule: CachedSchedule, fetchedAt: Long = System.currentTimeMillis(), confirmedEmpty: Boolean = false) {
         require(ScheduleJson.parse(schedule.json) != null) { "Invalid timetable must not replace the cache" }
         val base = prefix(account, school)
         val previous=read(account,school,schedule.term)
         val previousCourses=previous?.let(ScheduleJson::parse)
         val nextCourses=ScheduleJson.parse(schedule.json)!!
-        require(!(school=="scvtc" && previousCourses?.isNotEmpty()==true && nextCourses.isEmpty())){"空结果不能覆盖本地课表"}
+        require(!(school=="scvtc" && previousCourses?.isNotEmpty()==true && nextCourses.isEmpty() && !confirmedEmpty)){"空结果不能覆盖本地课表"}
         if(previousCourses?.isNotEmpty()==true)check(preferences.edit().putString("${base}_${schedule.term.id}_last_good",previous).commit()){"未能备份本地课表"}
         check(preferences.edit()
             .putString("${base}_${schedule.term.id}", schedule.json)
             .putLong("${base}_${schedule.term.id}_time", fetchedAt)
+            .putString("${base}_${schedule.term.id}_confirmed_empty", if (confirmedEmpty && nextCourses.isEmpty()) cn.scvtc.campus.core.digest(schedule.json) else null)
             .putString("${base}_current", JSONObject().put("term", schedule.currentTerm.id)
                 .put("termMetadata", schedule.currentTerm.toJson())
                 .put("calendar", calendarTerm().id).toString())

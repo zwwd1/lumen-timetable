@@ -33,6 +33,7 @@ def digest(data):
 
 artifacts = [(META['artifact'], META['parts'])] + [(entry['artifact'], entry['parts']) for entry in META.get('additionalArtifacts', [])]
 verified_files = []
+release_notes = (ROOT / 'releases' / (META['version'] + '.md')).read_text()
 for artifact, parts in artifacts:
     assert Path(artifact['file']).name == artifact['file'] and artifact['file'].endswith('.apk')
     expected = {
@@ -57,6 +58,9 @@ for artifact, parts in artifacts:
         with zipfile.ZipFile(path) as archive:
             assert archive.testzip() is None
             assert META['sourceCommit'].encode() in archive.read('META-INF/version-control-info.textproto')
+            history = json.loads(archive.read('assets/release-history.json'))
+            current = next(entry for entry in history if entry['version'] == META['version'])
+            assert current['body'] in release_notes, 'APK history and GitHub release notes differ'
             abis = {name.split('/')[1] for name in archive.namelist() if name.startswith('lib/') and name.endswith('.so')}
             if artifact.get('abi') == 'arm64-v8a': assert abis == {'arm64-v8a'}
             if artifact.get('abi') == 'universal' and expected[0] == 'cn.scvtc.campus.next': assert abis == {'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'}
@@ -80,7 +84,7 @@ except urllib.error.HTTPError as error:
     drafts = request(API + '/releases?per_page=100')
     release = next((r for r in drafts if r['tag_name'] == tag and r['draft']), None)
     if release is None:
-        release = request(API + '/releases', json.dumps({'tag_name': tag, 'target_commitish': META['sourceCommit'], 'name': META['name'] + ' ' + META['version'], 'body': (ROOT/'releases'/ (META['version'] + '.md')).read_text(), 'draft': True, 'prerelease': False}, ensure_ascii=False).encode())
+        release = request(API + '/releases', json.dumps({'tag_name': tag, 'target_commitish': META['sourceCommit'], 'name': META['name'] + ' ' + META['version'], 'body': release_notes, 'draft': True, 'prerelease': False}, ensure_ascii=False).encode())
 assets = {a['name']: a for a in release['assets']}
 provenance = (ROOT / 'BUILD_PROVENANCE.json').read_bytes()
 upload_files = [('BUILD_PROVENANCE.json', provenance, 'application/json')]

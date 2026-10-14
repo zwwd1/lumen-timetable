@@ -6,7 +6,7 @@
 
 我不会实时维护，更新要看时间和精力。学校以后改登录方式或接口，应用可能会失效，也不保证立刻有人修。遇到了可以自己 fork，自行 vibe coding；源码和构建方法都留着，想怎么改就动手试试。
 
-[下载 APK](https://github.com/zwwd1/lumen-timetable/releases/latest) · [反馈问题](https://github.com/zwwd1/lumen-timetable/issues) · [更新记录](release-notes/v1.2.9.md)
+[下载 APK](https://github.com/zwwd1/lumen-timetable/releases/latest) · [反馈问题](https://github.com/zwwd1/lumen-timetable/issues) · [更新记录](release-notes/v1.2.11.md)
 
 ## 看图上手
 
@@ -42,9 +42,9 @@
 
 ## 安装与构建
 
-1.2.9 提供一份 ARM64 日常包，适合 Android 13 及以上的 64 位 ARM 手机。课表、成绩、学分、官方认证、编辑、提醒、组件和 AI 均保留，学校页面使用系统 WebView。
+日常使用下载默认的川职包：课表、成绩、学分、官方认证、编辑、提醒、组件和 AI 均保留。它使用系统 WebView 连接学校，不再携带另一套浏览器内核。
 
-本次不额外发布完整插件平台 APK。Gecko、ONNX、模型和对应源码仍保留，可以自行构建；需要已有平台包时见 [1.2.6 历史发布](https://github.com/zwwd1/lumen-timetable/releases/tag/v1.2.6)。日常包和平台包沿用相同包名、原签名及数据格式，应用内更新保持类型，不自动换成另一种分发。
+需要第三方嵌入浏览器扩展时，下载文件名含 `platform` 的完整插件平台包。Gecko、ONNX 和原模型仍在这个包中；它与川职包使用相同包名、原签名和数据格式，可以覆盖切换。应用内更新会保留当前包的类型。两种分发均提供 ARM64 与通用包；同一分发内功能相同，不确定机型时选通用包。
 
 使用 JDK 21、Android SDK 37.0 与仓库中的 Gradle Wrapper：
 

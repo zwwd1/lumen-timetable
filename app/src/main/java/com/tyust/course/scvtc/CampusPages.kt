@@ -388,6 +388,11 @@ fun NextProfile(revision: Int, onLogin: () -> Unit, onTools: () -> Unit, onSched
     val user = UserManager.getInstance()
     val account = ScvtcRuntime.account
     val term = ScvtcRuntime.semester
+    val progress by ScvtcRuntime.syncState.collectAsState()
+    val services by produceState<List<ServiceReadStatus>>(emptyList(), account, term, revision, progress) {
+        value = emptyList()
+        if (account.isNotBlank() && term.isNotBlank()) value = withContext(Dispatchers.IO) { ScvtcRuntime.serviceStatuses(account, term) }
+    }
     val snapshot by produceState<ScvtcSnapshot?>(null, account, term, revision) {
         value = null
         if (account.isNotBlank()) value = withContext(Dispatchers.IO) { ScvtcRuntime.snapshot() }
@@ -430,6 +435,31 @@ fun NextProfile(revision: Int, onLogin: () -> Unit, onTools: () -> Unit, onSched
             item {
                 CampusSyncPanel(account, term, snapshot?.takeIf { it.account == account && it.semester == term }?.fetchedAt ?: 0,
                     onConnect = ::authenticate) { ScvtcRuntime.startNativeSync() }
+            }
+            if (services.isNotEmpty()) item {
+                NextGroup {
+                    services.forEach { service ->
+                        val title = when (service.module) {
+                            "authentication" -> "学校认证"
+                            "schedule" -> "课表"
+                            else -> School.service(service.module)?.title ?: "教务数据"
+                        }
+                        val state = when (service.code) {
+                            ServiceReadCode.READING -> if (progress.busy) "正在读取" else "上次读取未完成 · 点击重试"
+                            ServiceReadCode.NETWORK_FAILED -> "网络未完成 · 点击重试"
+                            ServiceReadCode.AUTH_REQUIRED -> "需补充学校认证"
+                            ServiceReadCode.FAILED -> "读取未完成 · 上次记录保留"
+                            else -> if (service.lastSuccess > 0) "已保存" else "尚未读取"
+                        }
+                        NextRow(title, state + if (service.lastSuccess > 0) " · ${savedTime(service.lastSuccess)}" else "") {
+                            when {
+                                service.module == "authentication" || service.code == ServiceReadCode.AUTH_REQUIRED -> authenticate()
+                                service.module == "schedule" -> ScvtcRuntime.startNativeSync()
+                                else -> ScvtcRuntime.refreshService(service.module)
+                            }
+                        }
+                    }
+                }
             }
             item { Text("课表与文件", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) }
             item {
