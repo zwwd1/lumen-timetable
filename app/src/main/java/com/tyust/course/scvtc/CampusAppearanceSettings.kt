@@ -11,6 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,6 +31,17 @@ fun CampusAppearanceSettings(onDismiss: () -> Unit) {
         val context=LocalContext.current
         val experiencePrefs=remember(context){cn.scvtc.campus.AppExperiencePreferences.get(context)}
         val experience by experiencePrefs.state.collectAsState()
+        var systemAnimationsEnabled by remember { mutableStateOf(android.animation.ValueAnimator.areAnimatorsEnabled()) }
+        val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                    systemAnimationsEnabled = android.animation.ValueAnimator.areAnimatorsEnabled()
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        }
         val pageRevision by com.tyust.course.academic.plugin.PluginPages.revision.collectAsState()
         val registry=com.tyust.course.academic.plugin.PluginPages.registry
         val pinned=remember(pageRevision){registry.pinned()}
@@ -68,6 +82,11 @@ fun CampusAppearanceSettings(onDismiss: () -> Unit) {
                 item { NextGroup {
                     NextSwitch("启动入场动画",experience.entranceAnimation,experiencePrefs::entrance)
                     NextText("短暂淡入衔接首屏；关闭后直接显示。系统关闭动画时自动遵循。",Modifier.padding(16.dp))
+                    NextText(if (systemAnimationsEnabled) "系统动画已开启。需要完整过渡时，同时关闭下方“减少动态效果”。" else "系统动画已关闭，过渡会直接完成；请将系统“动画时长缩放”调至 1 倍。", Modifier.padding(horizontal = 16.dp))
+                    NextButton("打开系统动画设置", Modifier.padding(16.dp)) {
+                        runCatching { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)) }
+                            .onFailure { GlassToaster.show("请在系统设置中搜索动画或开发者选项") }
+                    }
                 } }
                 item { NextGroup {
                     NextText("底部导航入口",Modifier.padding(16.dp))

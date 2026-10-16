@@ -112,7 +112,8 @@ fun SettingsScreen(
     onAcademicSupport: () -> Unit = {},
     onAcademicPlugins: () -> Unit = {},
     onCampusServices: () -> Unit = {},
-    onQuickFeedback: () -> Unit = {}
+    onQuickFeedback: () -> Unit = {},
+    showAccountBadges: Boolean = true
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var showAppearanceDetails by remember { mutableStateOf(false) }
@@ -154,6 +155,7 @@ fun SettingsScreen(
                 school = schoolName,
                 isSuper = isSuper,
                 quotaInfo = quotaInfo,
+                showAccountBadges = showAccountBadges,
                 canRefreshCookie = canRefreshCookie,
                 isRefreshingCookie = isRefreshingCookie,
                 onQuotaClick = onQuotaClick,
@@ -337,6 +339,7 @@ private fun SettingsHeader(
     school: String,
     isSuper: Boolean,
     quotaInfo: String,
+    showAccountBadges: Boolean,
     canRefreshCookie: Boolean,
     isRefreshingCookie: Boolean,
     onQuotaClick: () -> Unit,
@@ -391,7 +394,7 @@ private fun SettingsHeader(
             }
         }
 
-        androidx.compose.foundation.layout.FlowRow(
+        if (showAccountBadges) androidx.compose.foundation.layout.FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
