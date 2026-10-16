@@ -160,7 +160,9 @@ fun ScheduleScreen(
                         onShown = { week, day, scroll -> shownWeek = week; shownDay = day; activeScroll = scroll },
                         onScroll = { if (mode) dayOffset = it else weekOffset = it })
                 }
-                if (errorMessage.isNotBlank()) Surface(Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 12.dp), shape = MaterialTheme.shapes.medium) {
+                if (errorMessage.isNotBlank()) Surface(Modifier.align(Alignment.BottomCenter)
+                    .padding(bottom = com.tyust.course.ui.system.LocalAppOverlayBottomInset.current + 12.dp)
+                    .padding(horizontal = 16.dp), shape = MaterialTheme.shapes.medium) {
                     Column(Modifier.padding(12.dp)) { Text(errorMessage, style = MaterialTheme.typography.bodySmall); TextButton(onClick = onRetry, enabled = !isLoading) { Text("重新同步") } }
                 }
             }

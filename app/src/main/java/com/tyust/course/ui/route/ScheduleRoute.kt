@@ -326,14 +326,25 @@ fun ScheduleRoute(isActive: Boolean = true, openSettings: Boolean = false, onSet
                 } catch (e: CancellationException) { throw e }
                 catch (e: Exception) {
                     if (requests.isCurrent(ticket) && studyGeneration == generation) {
-                        val message = e.message ?: "课表同步失败，请重试"
-                        loadError = if (retained) "同步失败，已保留本地课表：$message" else message
+                        val causes = generateSequence<Throwable>(e) { it.cause }.take(8).toList()
+                        val needsAuthentication = causes.any {
+                            it is cn.scvtc.campus.JwxtAuthenticationRequired ||
+                                it is com.tyust.course.academic.AcademicException &&
+                                it.status == com.tyust.course.academic.AcademicStatus.SESSION_EXPIRED
+                        }
+                        val message = when {
+                            needsAuthentication -> "学校需要补充认证，请在官方认证页完成后重试。"
+                            causes.any { it is java.net.SocketTimeoutException } -> "学校响应超时，请稍后重试。"
+                            causes.any { it is java.io.IOException } -> "暂时无法连接学校，请检查网络后重试。"
+                            else -> "暂时无法读取课表，请稍后重新同步。"
+                        }
+                        loadError = if (retained) "已保留本地课表。$message" else message
                         if (manual) {
                             if (e is com.tyust.course.academic.AcademicException &&
                                 e.status == com.tyust.course.academic.AcademicStatus.SESSION_EXPIRED)
                                 CourseApiClient.getInstance().notifyCookieExpired(ticket.session,
                                     com.tyust.course.manager.RequestFeedback.Interactive)
-                            GlassToaster.show(if (retained) "同步失败，已保留本地课表" else message)
+                            // The persistent retry card already explains this failure.
                         }
                     }
                 } finally {
