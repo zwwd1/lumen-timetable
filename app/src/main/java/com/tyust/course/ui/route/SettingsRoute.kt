@@ -364,7 +364,7 @@ fun SettingsRoute(
         onAcademicPlugins = { context.startActivity(Intent(context, com.tyust.course.academic.plugin.PluginCenterActivity::class.java)) },
         onCampusServices = { com.tyust.course.scvtc.CampusNavigation.request.value = "app.services" },
         onQuickFeedback = { com.tyust.course.academic.plugin.PluginFeedback.open(context) },
-        showAccountBadges = userManager.currentSchool?.id != "scvtc"
+        showAccountBadges = UserManager.getInstance().currentSchool?.id != "scvtc"
     )
     if (showAcademicSupport) com.tyust.course.ui.screen.AcademicSupportDialog(
         UserManager.getInstance().currentSchool?.academicSystem, onDismiss = { showAcademicSupport = false })
