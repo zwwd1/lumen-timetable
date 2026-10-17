@@ -1,14 +1,14 @@
 {
-  "version": "1.2.15",
-  "sourceCommit": "4eac8e82cbb7adc8c1b6782b86a5aafd697c9550",
+  "version": "1.2.16",
+  "sourceCommit": "4eebde84a44cef042db1fa689b254061ebab6e3b",
   "sourceRepository": "zwwd1/lumen-timetable",
   "artifact": {
-    "file": "Lumen-Timetable-1.2.15.apk",
+    "file": "Lumen-Timetable-1.2.16.apk",
     "packageName": "cn.scvtc.campus.next",
-    "versionCode": 24,
+    "versionCode": 25,
     "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
-    "size": 18505686,
-    "sha256": "8b751f35f6bf0dd7d2afb951dfa247c985183ab395a90869b29a1ae1f0562db7",
+    "size": 18504646,
+    "sha256": "00c0adb8b011c11ed0613d3cdbe32a10ad5b6cf64499d42be48c8d8d20b1372b",
     "abi": "arm64-v8a"
   },
   "releaseBuild": "passed",
@@ -31,45 +31,34 @@
     "appName": true,
     "releaseHistory": true
   },
-  "localBuildInputsSha256": "c3b84b98ef8966e92d999f4d9b4ad0b98feed750b8678c3d17cbecd57ec99a73",
+  "localBuildInputsSha256": "ddba139795e89c550329c6c44e65f448568781539620d0f7501aedce72a4aa10",
   "sourceGitMatch": {
     "contentDifferent": 0,
-    "lineEndingsOnly": 688
+    "lineEndingsOnly": 686
   },
-  "mappingId": "663d6c6526ee833507f897fc0131e2043ca492f93b09d6153f9415d92d6eb5f4",
+  "mappingId": "a9be2717439b0ef3d04404a1564a23025c6b0940c271598e884490c208e73d6c",
   "deviceTests": {
     "device": "Redmi K40 / Android 13 / API 33",
     "date": "2026-10-17至18日",
-    "artifactSha256": "8b751f35f6bf0dd7d2afb951dfa247c985183ab395a90869b29a1ae1f0562db7",
+    "artifactSha256": "00c0adb8b011c11ed0613d3cdbe32a10ad5b6cf64499d42be48c8d8d20b1372b",
     "coverInstall": "passed",
-    "summary": "最终源码 4eac8e8 的原签名 ARM64 包覆盖安装成功，23:51 自动同步，原课表保留；总体成绩再次显示 39 条、63.5 确认学分。组件添加后的说明已在当前设置窗口内实机可见。相同认证代码的同日 1.2.15 候选使用记住输入原生登录于 23:26 成功，23:27 测试刷新后立即退到后台仍保存成功；系统受限提示受控显示、跳转到正确应用系统设置、恢复允许并返回后消失均通过。两版现已在系统界面设为无限制并开启自启动，字体和动画倍率恢复原值。此前同日 1.2.14 已测日周与周次、39 条成绩及详情/搜索/空学期/考试空结果、学分、CSV/HTML 导出后导入预览、未设作息时拒绝 ICS、断网保留课表、亮暗主题与自定义底栏。 最终包在 10 月 18 日 00:32 连续两次应用内在线更新检查显示已是最新版本；此前间歇失败保留缓存，未冒充检查成功。 最终包在回桌面等待自然调度后，于 00:47 自动保存认证、课表、成绩、考试、等级考试和学分六项；00:48 重开前没有手动刷新或强制触发任务，下一周期约两小时。",
-    "limits": "已观察到一次充电联网条件下的自然后台周期成功，Doze、系统冻结、重启后长时周期与所有自然过期场景仍未验收。认证错误页接续已修复当前路径；最终包未再次遇到真实 nginx 错误，不宣称错误现场已复现。学校强制安全确认仍可能需要本人操作。保留用户数据，未清库验证新装、退出、覆盖恢复。通知权限未授权，实际提醒送达及桌面组件持续更新未验收；AI/WebDAV 未配置。Android 17 和其他机型未复测。",
+    "summary": "最终源码 4eebde84 的原签名 ARM64 包覆盖成功，原账号和课表保留。01:35 重开后六项服务保存；01:46 使用已经记住的输入在原生登录页提交成功，再次完成六项保存。实机逐页检查今天、服务、学分、教务同步、外观及文件入口、上滑收起与透明模糊、下拉展开和返回；文件学期输入在键盘上方可见，登录密码输入有焦点且键盘正常弹出，未改凭据。成绩页仍正常读取 39 条、63.5 学分。系统退出记录无本包新增 Java 或原生崩溃。",
+    "limits": "保留现有数据，未清库验收首次安装、注销或覆盖恢复。登录安全键盘聚焦时系统不提供截图，未将该阶段计作截图验收。00:47 的两小时自然后台周期成功来自同轮 1.2.15，认证与后台调度代码未变，但不冒充 1.2.16 的自然周期验收。充电、Wi-Fi、无限制和自启动条件下测试；Doze、重启长时周期、全部自然过期类型、Android 17、通知送达、组件持续更新及未配置 AI/WebDAV 未验收。学校强制人工认证仍需本人；最终包未遇真实 nginx 错误现场。",
     "newCrash": false,
-    "naturalSessionExpiry": "automatic_recovery_observed_but_not_all_expiry_scenarios",
-    "freshInstall": "not_run_preserve_user_data",
-    "externalWebDAV": "not_configured",
-    "onlineUpdateCheck": {
-      "result": "passed_after_transient_failures",
-      "deviceLocalTime": "2026-10-18 00:32",
-      "repeatCheck": "passed",
-      "phonePublicEndpointHttp": {
-        "raw": 200,
-        "api": 200
-      },
-      "productionVerifierOnJvm": "passed",
-      "scope": "此前多次回退缓存；本次连续两次读取成功，不代表所有网络均稳定"
+    "headerIntegration": {
+      "sync": "passed",
+      "credits": "passed",
+      "appearance": "passed",
+      "files": "passed",
+      "pullDownExpand": "passed",
+      "backNavigation": "passed",
+      "fileKeyboardAvoidance": "passed",
+      "loginKeyboard": "focus_and_keyboard_confirmed_secure_capture_unavailable"
     },
-    "rotationCheck": "phone_portrait_policy_retained; temporary_system_rotation_restored",
-    "naturalBackground": {
-      "result": "passed_one_natural_period",
-      "savedAt": "2026-10-18 00:47 +0800",
-      "appReopenedAfter": "2026-10-18 00:48 +0800",
-      "manualRefresh": false,
-      "forcedJobTrigger": false,
-      "servicesSaved": 6,
-      "nextPeriod": "about 2 hours",
-      "conditions": "charging; Wi-Fi; battery unrestricted; autostart enabled"
-    }
+    "nativeRememberedLogin": "passed_2026-10-18_01:46",
+    "servicesSaved": 6,
+    "naturalPeriodicSync": "observed_v1.2.15_00:47_same_scheduler_not_yet_due_v1.2.16",
+    "freshInstall": "not_run_preserve_user_data"
   },
   "additionalArtifacts": []
 }
