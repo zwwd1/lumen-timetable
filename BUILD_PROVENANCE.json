@@ -1,18 +1,19 @@
 {
-  "version": "1.2.11",
-  "sourceCommit": "c1426fe42b8169962a0d6b49f3ec9d450831ce24",
+  "version": "1.2.14",
+  "sourceCommit": "0b8a4bf4bc40c892a02b92015f82614618b755a6",
   "sourceRepository": "zwwd1/lumen-timetable",
   "artifact": {
-    "file": "Lumen-Timetable-1.2.11.apk",
+    "file": "Lumen-Timetable-1.2.14.apk",
     "packageName": "cn.scvtc.campus.next",
-    "versionCode": 20,
+    "versionCode": 23,
     "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
-    "size": 18500722,
-    "sha256": "752ccbf78c95d1b4295f3af174353920fe638794b68874d72631547acd1404f3",
+    "size": 18503806,
+    "sha256": "7f9d46f0ff57ac037d01ee781ed207b28212c4d2280edfb06dadb1f0365ecc4b",
     "abi": "arm64-v8a"
   },
   "releaseBuild": "passed",
   "releaseLintVital": "passed",
+  "originalSignature": "passed",
   "artifactChecks": {
     "manifest": true,
     "originalSignature": true,
@@ -27,14 +28,26 @@
     "originalDonationPng": true,
     "noPlaintextCredentials": true,
     "r8Mapping": true,
-    "appName": true
+    "appName": true,
+    "releaseHistory": true
   },
-  "localBuildInputsSha256": "33d7be3930443adb14116ff607b503a22a4488eb50c0715e4d4be65b0f2e7cc4",
+  "localBuildInputsSha256": "d2665d21fb04a56a2c1362d59385cfb8b0393094a637ce23a8e9d1952d59e5cd",
   "sourceGitMatch": {
     "contentDifferent": 0,
-    "lineEndingsOnly": 690
+    "lineEndingsOnly": 689
   },
-  "mappingId": "32a3fe79c66d09c974f295689f79b32b02f865b67bae467d2c86f6a920a87982",
-  "deviceTests": "not_run_device_not_connected",
+  "mappingId": "aa6bae747814c06ee0de970d2928ade9447a0cd3b91236075f19793c33517f12",
+  "deviceTests": {
+    "device": "Redmi K40 / Android 13 / API 33",
+    "date": "2026-10-17",
+    "artifactSha256": "7f9d46f0ff57ac037d01ee781ed207b28212c4d2280edfb06dadb1f0365ecc4b",
+    "coverInstall": "passed",
+    "summary": "最终源码 0b8a4bf 的原签名包覆盖安装成功，课表与成绩保留并再次同步成功。外观参数滚动标题边界、添加和移除成绩底栏后页面保持原位、账号管理不显示旧配额说明、亮暗主题切换并恢复、应用内更新与内置 1.2.14 更新历史均已复核。同日 1.2.14 候选还验证了 39 条成绩、空学期、搜索、考试空结果、学分、CSV/HTML 文件导出再导入预览、缺少真实时间时拒绝 ICS、断网保留课表；受控后台 Worker 于 13:19:58 返回 SUCCESS。",
+    "limits": "受控触发不等同于自然两小时周期或 Doze 验收。间隔数小时的会话恢复曾需打开官方页面才能继续，不能记为完全无人操作续期通过；官方页面曾显示 nginx 错误，用户指出可通过三点菜单返回教务首页。未清除现有数据，不宣称首次安装或全部破坏性流程实机通过。通知权限未授权，未验证实际提醒送达。AI、WebDAV 未配置；组件未完成桌面添加与定时更新验收。Android 17 与其他设备未复测。",
+    "newCrash": false,
+    "naturalSessionExpiry": "partial_requires_official_page",
+    "freshInstall": "not_run_preserve_user_data",
+    "externalWebDAV": "not_configured"
+  },
   "additionalArtifacts": []
 }
