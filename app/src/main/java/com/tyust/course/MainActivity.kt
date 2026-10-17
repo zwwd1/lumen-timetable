@@ -732,7 +732,11 @@ fun MainScreen(fragmentActivity: FragmentActivity,showSchoolConnection:Boolean=f
             if(campusSettings)com.tyust.course.ui.system.GlassSubpage(onDismiss={campusSettings=false}){close->
               com.tyust.course.scvtc.NextProfile(schoolRevision,onLogin={fragmentActivity.startActivity(Intent(fragmentActivity,LoginActivity::class.java))},onTools={campusTools=true},onSchedule={com.tyust.course.scvtc.CampusNavigation.request.value="schedule-settings"},onBack=close)
             }
-            if(campusTools)com.tyust.course.ui.system.GlassSubpage(onDismiss={campusTools=false}){close->Column{com.tyust.course.scvtc.NextButton("返回",Modifier.statusBarsPadding().padding(12.dp),close);Box(Modifier.weight(1f)){com.tyust.course.scvtc.NextFileTools{fragmentActivity.startActivity(Intent(fragmentActivity,com.tyust.course.scvtc.ScvtcWebActivity::class.java))}}}}
+            if (campusTools) com.tyust.course.ui.system.GlassSubpage(onDismiss = { campusTools = false }) { close ->
+                com.tyust.course.scvtc.NextFileTools(onBack = close) {
+                    fragmentActivity.startActivity(Intent(fragmentActivity, com.tyust.course.scvtc.ScvtcWebActivity::class.java))
+                }
+            }
             if(showSchoolConnection) SystemDialog(
                 onDismissRequest={onSchoolConnectionChoice(false)},
                 title={Text("Lumen 课程表 · 使用指南",style=MaterialTheme.typography.titleLarge)},

@@ -713,12 +713,15 @@ private fun ScvtcAccountLogin(
             }
         }
     }
+    val scrollState = rememberScrollState()
     com.tyust.course.ui.system.GlassPageScaffold(
-        title = "连接川职教务", subtitle = "四川职业技术学院", onBack = onBack
+        title = "连接川职教务", subtitle = "四川职业技术学院", onBack = onBack,
+        collapseFraction = com.tyust.course.ui.system.rememberScrollHeaderCollapse(scrollState)
     ) { insets ->
-        Box(Modifier.fillMaxSize().padding(insets).consumeWindowInsets(insets).imePadding(), contentAlignment = Alignment.TopCenter) {
+        Box(Modifier.fillMaxSize().consumeWindowInsets(insets).imePadding(), contentAlignment = Alignment.TopCenter) {
             Column(Modifier.widthIn(max = 560.dp).fillMaxSize()
-                .verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
+                .verticalScroll(scrollState).padding(start = 20.dp, end = 20.dp,
+                    top = insets.calculateTopPadding() + 12.dp, bottom = insets.calculateBottomPadding() + 12.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 com.tyust.course.ui.system.InsetGroupedSection(
                     footer = "已开启记住密码。输入按账号加密保存在本机；会话到期后自动恢复，不写入普通导出或云端。"

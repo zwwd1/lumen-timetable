@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -106,15 +107,15 @@ fun NextHome(revision: Int, onSchedule: () -> Unit, onLogin: () -> Unit) {
         ScheduleWidgetNavigation.openCourse(storageKey, "scvtc", term, course.id)
         onSchedule()
     }
+    val listState = rememberLazyListState()
+    GlassPageScaffold(title = "今天", subtitle = "${schoolDate.monthValue}月${schoolDate.dayOfMonth}日 · " +
+        (agenda.week?.let { "第 $it 周" } ?: "开学日期待确认"),
+        collapseFraction = rememberListHeaderCollapse(listState), actions = { CampusQuickActions() }) { padding ->
     LazyColumn(
-        modifier = Modifier.statusBarsPadding(),
-        contentPadding = PaddingValues(20.dp, 12.dp, 20.dp, LocalAppOverlayBottomInset.current + 24.dp),
+        modifier = Modifier.fillMaxSize(), state = listState,
+        contentPadding = PaddingValues(20.dp, padding.calculateTopPadding() + 12.dp, 20.dp, padding.calculateBottomPadding() + 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item {
-            CampusPageHeading("今天", "${schoolDate.monthValue}月${schoolDate.dayOfMonth}日 · " +
-                (agenda.week?.let { "第 $it 周" } ?: "开学日期待确认"))
-        }
         item {
             NextGroup {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -196,16 +197,6 @@ fun NextHome(revision: Int, onSchedule: () -> Unit, onLogin: () -> Unit) {
         }
     }
 }
-
-@Composable
-private fun CampusPageHeading(title: String, subtitle: String? = null) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-            if (!subtitle.isNullOrBlank()) Text(subtitle, style = MaterialTheme.typography.bodyMedium)
-        }
-        CampusQuickActions()
-    }
 }
 
 @Composable
@@ -266,6 +257,8 @@ fun NextServices(official: () -> Unit, creditsOpen: Boolean, onCreditsOpenChange
     val account = ScvtcRuntime.account
     val term = ScvtcRuntime.semester
     val bottom = LocalAppOverlayBottomInset.current + 24.dp
+    val servicesListState = rememberLazyListState()
+    val creditsListState = rememberLazyListState()
     fun open(id: String) { context.startActivity(Intent(context, ScvtcWebActivity::class.java).putExtra("module", id)) }
     if (creditsOpen) {
         BackHandler { onCreditsOpenChange(false) }
@@ -287,12 +280,11 @@ fun NextServices(official: () -> Unit, creditsOpen: Boolean, onCreditsOpenChange
         val target = schoolRequirement?.records?.firstOrNull()?.fields?.get("毕业学分要求").orEmpty()
         val required = target.toBigDecimalOrNull()?.takeIf { it.signum() > 0 }
         val terms = grades?.records.orEmpty().mapNotNull { it.fields["学期"]?.takeIf(String::isNotBlank) }.distinct().sortedDescending()
-        Scaffold(containerColor = androidx.compose.ui.graphics.Color.Transparent, topBar = {
-            SystemTopBar("学分概况", navigationIcon = {
-                SystemIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "返回服务中心", { onCreditsOpenChange(false) })
-            }, actions = { CampusQuickActions("刷新成绩与学分") { ScvtcRuntime.refreshAcademics() } })
-        }) { padding ->
-            LazyColumn(contentPadding = PaddingValues(20.dp, padding.calculateTopPadding() + 12.dp, 20.dp, bottom),
+        GlassPageScaffold(title = "学分概况", onBack = { onCreditsOpenChange(false) },
+            collapseFraction = rememberListHeaderCollapse(creditsListState),
+            actions = { CampusQuickActions("刷新成绩与学分") { ScvtcRuntime.refreshAcademics() } }) { padding ->
+            LazyColumn(modifier = Modifier.fillMaxSize(), state = creditsListState,
+                contentPadding = PaddingValues(20.dp, padding.calculateTopPadding() + 12.dp, 20.dp, bottom),
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 item {
                     NextGroup {
@@ -345,9 +337,11 @@ fun NextServices(official: () -> Unit, creditsOpen: Boolean, onCreditsOpenChange
             }
         }
     } else {
-        LazyColumn(modifier = Modifier.statusBarsPadding(), contentPadding = PaddingValues(20.dp, 12.dp, 20.dp, bottom),
+        GlassPageScaffold(title = "服务", subtitle = "常用查询在这里，其他业务可前往学校教务。",
+            collapseFraction = rememberListHeaderCollapse(servicesListState), actions = { CampusQuickActions() }) { padding ->
+        LazyColumn(modifier = Modifier.fillMaxSize(), state = servicesListState,
+            contentPadding = PaddingValues(20.dp, padding.calculateTopPadding() + 12.dp, 20.dp, bottom),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            item { CampusPageHeading("服务", "常用查询在这里，其他业务可前往学校教务。") }
             item { GlassTextField(query, { query = it }, Modifier.fillMaxWidth(), "搜索课表、成绩或学分", leadingIcon = Icons.Outlined.Search) }
             val search = query.trim()
             val primary = School.services.filter {
@@ -378,6 +372,7 @@ fun NextServices(official: () -> Unit, creditsOpen: Boolean, onCreditsOpenChange
             }
         }
     }
+}
 }
 
 @Composable
@@ -421,17 +416,18 @@ fun NextProfile(revision: Int, onLogin: () -> Unit, onTools: () -> Unit, onSched
     var confirmLogout by rememberSaveable(account) { mutableStateOf(false) }
     CampusCompanion.initialize(context)
     fun authenticate() { if (account.isBlank()) onLogin() else openSchoolAuthentication(context) }
+    val listState = rememberLazyListState()
 
     if (confirmLogout) SystemDialog(onDismissRequest = { confirmLogout = false }, title = { Text("退出学校账号？") },
         confirmButton = { SystemDestructiveButton("退出账号", { confirmLogout = false; ScvtcRuntime.logout(); onBack() }) },
         dismissButton = { SystemSecondaryButton("继续使用", { confirmLogout = false }) }) {
         NextText("本机认证凭据和网页登录状态会清除。离线课表与成绩仍按账号保留；以后联网同步需要重新登录。")
     }
-    Column(Modifier.fillMaxSize()) {
-        SystemTopBar("教务同步", navigationIcon = { SystemIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "返回", onBack) },
-            actions = { CampusQuickActions() })
-        LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(20.dp, 12.dp, 20.dp,
-            WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp),
+    GlassPageScaffold(title = "教务同步", onBack = onBack,
+        collapseFraction = rememberListHeaderCollapse(listState), actions = { CampusQuickActions() }) { padding ->
+        LazyColumn(modifier = Modifier.fillMaxSize(), state = listState,
+            contentPadding = PaddingValues(20.dp, padding.calculateTopPadding() + 12.dp, 20.dp,
+                padding.calculateBottomPadding() + 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item {
                 NextGroup {

@@ -3,6 +3,7 @@ package com.tyust.course.scvtc
 import android.os.Build
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.MaterialTheme
@@ -45,12 +46,12 @@ fun CampusAppearanceSettings(onDismiss: () -> Unit) {
         val pageRevision by com.tyust.course.academic.plugin.PluginPages.revision.collectAsState()
         val registry=com.tyust.course.academic.plugin.PluginPages.registry
         val pinned=remember(pageRevision){registry.pinned()}
-        Scaffold(containerColor = Color.Transparent, topBar = {
-            SystemTopBar("外观参数", navigationIcon = { SystemIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "返回", close) })
-        }) { padding ->
-            LazyColumn(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()), contentPadding = PaddingValues(
-                start = 20.dp, end = 20.dp, top = 12.dp,
-                bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp
+        val listState = rememberLazyListState()
+        GlassPageScaffold(title = "外观参数", onBack = close,
+            collapseFraction = rememberListHeaderCollapse(listState)) { padding ->
+            LazyColumn(Modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(
+                start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 12.dp,
+                bottom = padding.calculateBottomPadding() + 24.dp
             ), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 item { NextText("${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE}\n${if (AppearanceSettingsManager.glassEffectEnabled) "液态玻璃" else "高斯模糊"} · 外观开关统一影响按钮、弹窗、课表与底栏") }
                 item { NextGroup { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

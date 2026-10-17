@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -17,10 +18,12 @@ import com.openwakeup.parser.ics.*
 import com.tyust.course.manager.UserManager
 import com.tyust.course.manager.ScheduleSettingsManager
 import com.tyust.course.schedule.ScheduleRepository
+import com.tyust.course.ui.system.GlassPageScaffold
+import com.tyust.course.ui.system.rememberListHeaderCollapse
 import kotlinx.coroutines.*
 import java.time.*
 
-@Composable fun NextFileTools(official:()->Unit){
+@Composable fun NextFileTools(onBack:()->Unit = {}, official:()->Unit){
  val context=LocalContext.current;val scope=rememberCoroutineScope()
  var format by remember{mutableIntStateOf(0)};var account by remember{mutableStateOf(ScvtcRuntime.account)};var term by remember{mutableStateOf(ScvtcRuntime.semester)}
  var preview by remember{mutableStateOf<Extraction?>(null)};var message by remember{mutableStateOf("")};var busy by remember{mutableStateOf(false)};var export by remember{mutableStateOf("")}
@@ -42,7 +45,10 @@ import java.time.*
   }catch(e:Exception){message=e.message.orEmpty()}finally{busy=false}
  }}
  val output=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")){uri->if(uri!=null)scope.launch{try{withContext(Dispatchers.IO){context.contentResolver.openOutputStream(uri)?.use{it.write(export.toByteArray(Charsets.UTF_8))}?:error("无法写入文件")};message="文件已导出"}catch(e:Exception){message=e.message.orEmpty()}}}
- LazyColumn(contentPadding=PaddingValues(20.dp,8.dp,20.dp,40.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
+ val listState=rememberLazyListState()
+ GlassPageScaffold(title="课表导入与导出",onBack=onBack,collapseFraction=rememberListHeaderCollapse(listState)){padding->
+ LazyColumn(modifier=Modifier.fillMaxSize().imePadding(),state=listState,
+  contentPadding=PaddingValues(20.dp,padding.calculateTopPadding()+8.dp,20.dp,padding.calculateBottomPadding()+24.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
   item{NextGroup{NextRow("从官方课表同步","使用当前手机的网页登录态",official)}}
   item{NextGroup{NextChoice("文件格式",listOf("CSV","ICS","HTML"),format){format=it;preview=null};NextRow("选择文件并解析","UTF-8 · 保存前预览"){if(!busy)input.launch(arrayOf("*/*"))}}}
   item{NextGroup{Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
@@ -61,5 +67,6 @@ import java.time.*
    scope.launch{try{val meetings=withContext(Dispatchers.IO){ScvtcRuntime.extraction()?.meetings.orEmpty()};require(meetings.isNotEmpty()){"尚无真实课程"};val date=monday();val slots=clocks();export=withContext(Dispatchers.Default){when(format){0->CourseFormats.csv(meetings);1->CourseFormats.ics(meetings,date?:error("请先在课表设置里填写第一周周一"),slots);else->CourseFormats.html(meetings,ScvtcRuntime.semester)}};output.launch("川职课表-${ScvtcRuntime.semester}.${listOf("csv","ics","html")[format]}")}catch(e:Exception){message=e.message.orEmpty()}}
   }}}
  }
+}
 }
 private fun fromPreviews(items:List<CoursePreview>)=items.map{m->Meeting(name=m.name,teacher=m.teacher,room=m.room,day=m.day,startNode=m.startNode,endNode=m.startNode+m.step-1,weeks=(m.startWeek..m.endWeek).filter{m.type==0 ||m.type==1&&it%2==1 ||m.type==2&&it%2==0})}.groupBy{listOf(it.name,it.teacher,it.room,it.day,it.startNode,it.endNode)}.values.map{group->group.last().copy(weeks=group.flatMap{it.weeks}.distinct().sorted())}
