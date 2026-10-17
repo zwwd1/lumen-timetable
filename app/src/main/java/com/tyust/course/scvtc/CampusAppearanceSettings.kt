@@ -48,8 +48,8 @@ fun CampusAppearanceSettings(onDismiss: () -> Unit) {
         Scaffold(containerColor = Color.Transparent, topBar = {
             SystemTopBar("外观参数", navigationIcon = { SystemIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "返回", close) })
         }) { padding ->
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(
-                start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 12.dp,
+            LazyColumn(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()), contentPadding = PaddingValues(
+                start = 20.dp, end = 20.dp, top = 12.dp,
                 bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp
             ), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 item { NextText("${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE}\n${if (AppearanceSettingsManager.glassEffectEnabled) "液态玻璃" else "高斯模糊"} · 外观开关统一影响按钮、弹窗、课表与底栏") }
