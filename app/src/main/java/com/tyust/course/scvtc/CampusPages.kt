@@ -234,9 +234,9 @@ private fun CampusSyncPanel(
                     NativeSyncStage.SUCCESS -> Icons.Outlined.CheckCircle
                     else -> Icons.Outlined.Sync
                 }, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-                Text(if (busy) state?.label ?: "等待同步…" else state?.label ?: "本机数据", style = MaterialTheme.typography.titleSmall)
+                Text(if (busy) state?.label ?: "等待同步…" else state?.label?.let { "最近任务：$it" } ?: "本机数据", style = MaterialTheme.typography.titleSmall)
             }
-            if (cachedAt > 0) Text("最近成功同步：${savedTime(cachedAt)}", style = MaterialTheme.typography.bodySmall)
+            if (cachedAt > 0) Text("当前数据保存于：${savedTime(cachedAt)}", style = MaterialTheme.typography.bodySmall)
             if (busy) {
                 LinearProgressIndicator(Modifier.fillMaxWidth())
                 Text("离开此页仍会继续保存。", style = MaterialTheme.typography.bodySmall)
