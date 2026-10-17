@@ -55,16 +55,17 @@ object ScheduleWidgetUpdater {
     private var started = false
     private val observed = mutableListOf<Pair<SharedPreferences, SharedPreferences.OnSharedPreferenceChangeListener>>()
 
-    fun requestPin(context: Context, style: ScheduleWidgetStyle = ScheduleWidgetStyle.Double) {
+    fun requestPin(context: Context, style: ScheduleWidgetStyle = ScheduleWidgetStyle.Double,
+                   onFeedback: (String) -> Unit = { com.tyust.course.ui.system.GlassToaster.show(it) }) {
         val manager = AppWidgetManager.getInstance(context)
         if (android.os.Build.VERSION.SDK_INT >= 26 && manager.isRequestPinAppWidgetSupported) {
             val requested = runCatching {
                 manager.requestPinAppWidget(ComponentName(context, style.provider), null, null)
             }.getOrDefault(false)
-            com.tyust.course.ui.system.GlassToaster.show(if (requested)
+            onFeedback(if (requested)
                 "请确认添加；若桌面没有弹窗，可长按桌面添加“${style.title}”"
                 else "长按桌面，在小组件中添加“${style.title}”")
-        } else com.tyust.course.ui.system.GlassToaster.show("长按桌面，在小组件中添加“${style.title}”")
+        } else onFeedback("长按桌面，在小组件中添加“${style.title}”")
     }
 
     fun start(context: Context) {

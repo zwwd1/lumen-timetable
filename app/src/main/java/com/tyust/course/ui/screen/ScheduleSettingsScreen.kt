@@ -114,6 +114,7 @@ fun ScheduleSettingsScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showPeriodCountPicker by remember { mutableStateOf(false) }
     var editingPeriod by remember { mutableStateOf<PeriodTime?>(null) }
+    var widgetFeedback by remember { mutableStateOf<String?>(null) }
 
     val dateFormat = remember { SimpleDateFormat("yyyy年M月d日", Locale.CHINA) }
     val dateText = if (semesterStartDate > 0) dateFormat.format(Date(semesterStartDate)) else "未设置"
@@ -245,11 +246,13 @@ fun ScheduleSettingsScreen(
                                 onClick={onDisplayPreferences(com.tyust.course.schedule.ScheduleDisplayPreferences(dayView=displayPreferences.dayView))})
                         }
                     }
-                    InsetGroupedSection(header = "桌面组件") {
+                    InsetGroupedSection(header = "桌面组件", footer = widgetFeedback) {
                         com.tyust.course.schedule.ScheduleWidgetStyle.entries.forEachIndexed { index, style ->
                             InsetGroupedRow(title = style.title, subtitle = style.description,
                                 showDivider = index < com.tyust.course.schedule.ScheduleWidgetStyle.entries.lastIndex,
-                                onClick = { com.tyust.course.schedule.ScheduleWidgetUpdater.requestPin(context, style) })
+                                onClick = { com.tyust.course.schedule.ScheduleWidgetUpdater.requestPin(context, style) {
+                                    widgetFeedback = it
+                                } })
                         }
                     }
                     if (onAddCustomCourse != null) {
