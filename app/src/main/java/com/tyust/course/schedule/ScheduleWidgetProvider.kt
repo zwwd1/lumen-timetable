@@ -58,7 +58,12 @@ object ScheduleWidgetUpdater {
     fun requestPin(context: Context, style: ScheduleWidgetStyle = ScheduleWidgetStyle.Double) {
         val manager = AppWidgetManager.getInstance(context)
         if (android.os.Build.VERSION.SDK_INT >= 26 && manager.isRequestPinAppWidgetSupported) {
-            manager.requestPinAppWidget(ComponentName(context, style.provider), null, null)
+            val requested = runCatching {
+                manager.requestPinAppWidget(ComponentName(context, style.provider), null, null)
+            }.getOrDefault(false)
+            com.tyust.course.ui.system.GlassToaster.show(if (requested)
+                "请确认添加；若桌面没有弹窗，可长按桌面添加“${style.title}”"
+                else "长按桌面，在小组件中添加“${style.title}”")
         } else com.tyust.course.ui.system.GlassToaster.show("长按桌面，在小组件中添加“${style.title}”")
     }
 

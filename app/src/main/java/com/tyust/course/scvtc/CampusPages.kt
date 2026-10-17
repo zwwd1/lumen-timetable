@@ -2,6 +2,9 @@ package com.tyust.course.scvtc
 
 import android.content.Context
 import android.content.Intent
+import android.app.ActivityManager
+import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,6 +30,9 @@ import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import cn.scvtc.campus.CampusCompanion
 import cn.scvtc.campus.CampusDonationImage
 import cn.scvtc.campus.CasAuthManager
@@ -385,6 +391,16 @@ private fun CreditMeter(progress: Float) {
 @Composable
 fun NextProfile(revision: Int, onLogin: () -> Unit, onTools: () -> Unit, onSchedule: () -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    fun backgroundRestricted() = context.getSystemService(ActivityManager::class.java)?.isBackgroundRestricted == true
+    var restricted by remember(context) { mutableStateOf(backgroundRestricted()) }
+    DisposableEffect(lifecycleOwner, context) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) restricted = backgroundRestricted()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val user = UserManager.getInstance()
     val account = ScvtcRuntime.account
     val term = ScvtcRuntime.semester
@@ -435,6 +451,16 @@ fun NextProfile(revision: Int, onLogin: () -> Unit, onTools: () -> Unit, onSched
             item {
                 CampusSyncPanel(account, term, snapshot?.takeIf { it.account == account && it.semester == term }?.fetchedAt ?: 0,
                     onConnect = ::authenticate) { ScvtcRuntime.startNativeSync() }
+            }
+            if (restricted) item {
+                NextGroup {
+                    NextRow("系统限制了后台运行", "定时同步可能暂停。点此检查后台电量与自启动设置。") {
+                        runCatching {
+                            context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:${context.packageName}")))
+                        }.onFailure { GlassToaster.show("请在系统应用设置中打开 Lumen 的后台运行设置") }
+                    }
+                }
             }
             if (services.isNotEmpty()) item {
                 NextGroup {
