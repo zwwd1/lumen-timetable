@@ -128,7 +128,8 @@ class CasAuthManager(private val context:Context,private val api:JwxtApi) {
             }
             override fun onReceivedHttpError(v:WebView,r:WebResourceRequest,response:WebResourceResponse) {
                 if(!r.isForMainFrame)return
-                if(r.url.host=="jwxt.scvtc.edu.cn" && r.url.path=="/api/cas/login" && !homeRetry) {
+                if(r.url.host=="jwxt.scvtc.edu.cn" &&
+                    r.url.path in setOf(Uri.parse(JWXT_SSO_ENTRY).path,"/api/cas/login") && !homeRetry) {
                     homeRetry=true;targetReady=false;v.loadUrl(School.HOME)
                 } else failure.completeExceptionally(
                     if(response.statusCode in setOf(408,429) || response.statusCode in 500..599)
