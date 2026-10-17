@@ -658,7 +658,7 @@ fun MainScreen(fragmentActivity: FragmentActivity,showSchoolConnection:Boolean=f
                               val route = routes.getOrElse(page) { PluginPages.registry.fallback() }
                               savedPages.SaveableStateProvider(route) {
                                 com.tyust.course.ui.system.InitialPageLoad(
-                                    key = "$route:${session.token}:$pageRevision",
+                                    key = if (route == "app.settings") "$route:${session.token}" else "$route:${session.token}:$pageRevision",
                                     title = registeredPages.firstOrNull { it.id == route }?.title.orEmpty(),
                                     active = selectedPage == route,
                                     transitionFinished = navigationMotion.transitionFinished,

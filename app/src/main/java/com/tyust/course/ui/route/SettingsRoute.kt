@@ -611,7 +611,8 @@ fun SettingsRoute(
         SimpleConfirmDialog(
             title = "删除账号",
             text = "将删除「${record.displayName}」的账号记录、已保存的密码、登录状态与本地课程缓存，" +
-                "此操作不可恢复。绑定名额不会自动释放，可在配额管理中解绑。",
+                "此操作不可恢复。" + if (record.schoolId == "scvtc") "请先备份需要保留的本机数据。"
+                else "绑定名额不会自动释放，可在配额管理中解绑。",
             confirmText = "删除账号",
             onConfirm = {
                 deleteAccountEntirely(record)
@@ -992,7 +993,9 @@ private fun AccountManagerDialog(
 
             Text(
                 text = "密码经系统密钥库加密后仅保存在本机，用于登录状态失效时自动续期；" +
-                    "退出登录不会删除它。删除账号不会自动释放绑定名额，可在配额管理中解绑。",
+                    "退出登录不会删除它。" + if (accounts.all { it.schoolId == "scvtc" })
+                    "删除账号前请先备份需要保留的本机数据。"
+                    else "删除账号不会自动释放绑定名额，可在配额管理中解绑。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 18.sp
