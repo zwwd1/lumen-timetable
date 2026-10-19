@@ -1,13 +1,190 @@
-# SCVTC · Zhixue 1.2.0
+<div align="center">
+<img src="app/src/main/res/drawable-nodpi/campus_icon_portrait.webp" width="88" alt="Lumen icon">
+<h1>Lumen Timetable</h1>
+<p>Classes, grades and exams, with fewer steps.</p>
 
-An independent, unofficial Android app for Sichuan Vocational and Technical College, maintained by zwwd1.
+[![Release](https://img.shields.io/github/v/release/zwwd1/lumen-timetable?label=Download&color=2788ed)](https://github.com/zwwd1/lumen-timetable/releases/latest)
+![Android](https://img.shields.io/badge/Android-13%2B-34a853?logo=android&logoColor=white)
 
-[Chinese guide](README.md) · [Download](https://github.com/zwwd1/scvtc-zhixue/releases/latest) · [Report an issue](https://github.com/zwwd1/scvtc-zhixue/issues/new)
+[简体中文](README.md) · [English](README.en.md)
 
-The app reads real school timetable, grade and credit responses, keeps offline records, and restores school authentication with locally encrypted credentials. Extra school verification may still require the student. Cloud services are paused.
+**[Download](#download) · [Screenshots](#screenshots) · [Features](#features) · [Quick Start](#start) · [Build](#build) · [Documentation](#docs)**
+</div>
 
-Version 1.2.0 provides one appearance setting, consistent wallpaper and glass controls, an original five-pose anime companion, and a configurable HTTPS AI assistant. The AI key and history are encrypted on the device; school passwords and sessions are never sent to AI providers. Course context is opt-in.
+Lumen is an independent, unofficial adaptation of the original campus app for Sichuan Vocational and Technical College, maintained by **zwwd1**. It brings timetable, grades, exams, credits and common school services together. For a timetable-focused workflow with course editing, schedules and reminders, see [Gnomon](https://github.com/zwwd1/gnomon-timetable).
 
-Install the original-signature APK over the existing app to retain data. Do not uninstall first. Release assets include checksums and build provenance; the release tag points to the source commit embedded in the APK. Device behavior for this release is awaiting user acceptance.
+<details>
+<summary><strong>Contents</strong></summary>
 
-See [usage](docs/SCVTC_USAGE.md), [privacy](docs/SCVTC_PRIVACY.md), [build instructions](SCVTC_BUILD.md), [source notices](SCVTC-NOTICES.md), and [the screenshot repair record](docs/OPTIMIZATION_20261010.md). Original license and attribution records are retained.
+- [Download & Installation](#download)
+- [Screenshots](#screenshots)
+- [Features](#features)
+- [Quick Start](#start)
+- [Appearance & Daily Use](#appearance)
+- [Data & Privacy](#privacy)
+- [Implementation & Build](#build)
+- [Maintenance & Validation](#maintenance)
+- [FAQ](#faq)
+- [Documentation](#docs)
+- [Attribution & Licenses](#credits)
+
+</details>
+
+---
+
+<a id="download"></a>
+
+## Download & Installation
+
+| Variant | Purpose and architecture | Get it |
+| :--- | :--- | :--- |
+| **campus · 1.2.16** | Daily school use; this release is **ARM64** | [APK](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.16/Lumen-Timetable-1.2.16.apk) · 17.65 MiB |
+| **platform** | Adds Gecko, ONNX and models for third-party extensions requiring an embedded browser | [Build from source](#build); not attached to this release |
+
+[SHA-256](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.16/Lumen-Timetable-1.2.16.apk.sha256) · [Build provenance](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.16/BUILD_PROVENANCE.json) · [Matching source](https://github.com/zwwd1/lumen-timetable/tree/4eebde84a44cef042db1fa689b254061ebab6e3b) · [Release history](https://github.com/zwwd1/lumen-timetable/releases)
+
+Choose **campus** for normal use. It uses system WebView and keeps the school timetable, grades, credits, official authentication, editing, reminders, widgets and AI. Other architectures require your own build.
+
+The variants share a package ID and data format. Switching or updating in place requires matching signatures and an eligible version. A self-signed build cannot directly update an official project release signed with a different certificate.
+
+---
+
+<a id="screenshots"></a>
+
+## Screenshots
+
+<table><tr>
+<td align="center"><img src="docs/images/20261017/timetable.png" width="240" alt="Lumen weekly timetable"><br><b>Timetable</b><br>Day/week views and course details.</td>
+<td align="center"><img src="docs/images/20261017/semester-empty.png" width="240" alt="Lumen empty-semester grade page"><br><b>Grades and exams</b><br>Switch between semesters and overall results.</td>
+<td align="center"><img src="docs/images/20261017/effects.png" width="240" alt="Lumen appearance settings"><br><b>Materials and motion</b><br>Refraction, dispersion and spring controls.</td>
+</tr></table>
+
+Captured on **2026-10-17, Redmi K40 / Android 13, Lumen 1.2.14**. The images do not show accounts, credentials or personal grades.
+
+---
+
+<a id="features"></a>
+
+## Features
+
+| School information | Local data and sync | Appearance and extensions |
+| :--- | :--- | :--- |
+| Day/week timetable and editing | Cached results shown first | Glass titles that collapse on scroll |
+| Grades, semesters and exam schedules | Records scoped by account and semester | Refraction, dispersion and springs |
+| Credits and actual graduation requirements | Background attempts and manual refresh | Reduced motion and campus companion |
+| Reminders and home-screen widgets | CSV / ICS / HTML import and export | User-configured AI; optional platform extensions |
+
+[Version 1.2.16](release-notes/v1.2.16.md) restores shared scrolling glass headers to Today, credits, sync, appearance, files and login, while retaining keyboard avoidance.
+
+---
+
+<a id="start"></a>
+
+## Quick Start
+
+1. Use the first-run invitation to connect with your school ID and school password. Credentials are remembered with local encryption.
+2. Open the timetable and check the semester start date and period times in timetable settings.
+3. Open **Courses → Grades & Exams** for semester, overall and exam information; **Credits** separates earned credits from requirements actually returned by the school.
+4. Review the saved time and error state for each service on the sync page. Existing records remain available when a request fails.
+5. Use Settings to export CSV, ICS or HTML. Imports show a preview before confirmation.
+
+Ordinary expired sessions can be restored automatically where the school permits it. CAPTCHA or additional security checks must still be completed by the student in the official authentication page. See the [illustrated guide](docs/SCVTC_USAGE.md).
+
+---
+
+<a id="appearance"></a>
+
+## Appearance & Daily Use
+
+Settings provides course-card, bottom-bar blur, refraction, dispersion, spring and companion controls. Liquid Glass has its own appearance switch. Effects are not locked out by an old device model; the app follows system animation settings.
+
+The background task attempts updates on a two-hour cycle, but Android, power, network and vendor restrictions affect when it runs. Refresh manually when current information is needed.
+
+---
+
+<a id="privacy"></a>
+
+## Data & Privacy
+
+School authentication and queries connect directly to school services. Passwords and recoverable sessions are encrypted locally using Android Keystore-managed keys. Normal course exports do not include school credentials.
+
+Ordinary course records are stored in the app's private Room database, protected by the app sandbox and Android device-storage encryption. Upstream cloud sync and anonymous statistics are paused. AI requires a user-configured service; selected online features can still make network requests. School credentials are not sent to the maintainer or AI providers. See the [privacy document](docs/SCVTC_PRIVACY.md).
+
+---
+
+<a id="build"></a>
+
+## Implementation & Build
+
+Kotlin / Compose renders the native UI. School authentication lives in `cn/scvtc/campus`, sync and projections in `com/tyust/course/scvtc`, and shared validation rules in `school-core`. Account, semester and completeness checks precede Room writes.
+
+```mermaid
+flowchart LR
+  SCHOOL["School services<br/>CAS / JWXT"] --> CHECK["Authentication and validation<br/>Account / semester / scope"]
+  CHECK --> LOCAL["Local persistence<br/>Room / query cache"]
+  LOCAL --> UI["Native UI<br/>Timetable / grades / reminders"]
+```
+
+Prepare **JDK 21 and Android SDK 37**, configure `JAVA_HOME` and `ANDROID_HOME`, and use the repository's Gradle Wrapper:
+
+```powershell
+git clone https://github.com/zwwd1/lumen-timetable.git
+cd lumen-timetable
+.\gradlew.bat :app:assembleCampusRelease
+# Optional full extension platform
+.\gradlew.bat :app:assemblePlatformRelease
+```
+
+Use tag `v1.2.16` for the source matching this release. Platform-specific code and models are under `app/src/platform`. Original signing material is kept outside the repository. See [architecture and build](docs/SCVTC_ARCHITECTURE.md) and [platform release requirements](spec/PLUGIN-PLATFORM-RELEASE.md).
+
+---
+
+<a id="maintenance"></a>
+
+## Maintenance & Validation
+
+Updates depend on the maintainer's available time. School interface or authentication changes may break functionality, and immediate repairs are not guaranteed. Source and build instructions remain available for independent maintenance.
+
+The 1.2.16 signed build, release provenance and in-place upgrade on **Redmi K40 / Android 13** have recorded checks. Fresh installs, all ROMs, prolonged Doze/reboot scheduling, notification delivery and continuous widget updates are not comprehensively covered. See [VERIFICATION.md](VERIFICATION.md) and [BUILD_PROVENANCE.json](BUILD_PROVENANCE.json) for the exact evidence and limits.
+
+---
+
+<a id="faq"></a>
+
+## FAQ
+
+<details>
+<summary><strong>Should I uninstall before updating?</strong></summary>
+
+No. Use a matching-signature project release with an eligible version to update in place. If a signature mismatch occurs, check the source first. Uninstalling or clearing data loses local keys, so copied encrypted files cannot restore the old login.
+
+</details>
+
+<details>
+<summary><strong>Does Lumen share its account or timetable with Gnomon?</strong></summary>
+
+The apps can coexist, but maintain separate data spaces. Choose whichever workflow fits; accounts and records are not automatically shared.
+
+</details>
+
+---
+
+<a id="docs"></a>
+
+## Documentation
+
+| Task | Read |
+| :--- | :--- |
+| Connect to school and use the app | [Illustrated guide](docs/SCVTC_USAGE.md) |
+| Read release changes | [1.2.16 notes](release-notes/v1.2.16.md) · [Release history](https://github.com/zwwd1/lumen-timetable/releases) |
+| Understand data flow and build | [Architecture](docs/SCVTC_ARCHITECTURE.md) · [Platform release requirements](spec/PLUGIN-PLATFORM-RELEASE.md) |
+| Check privacy and acceptance | [Privacy](docs/SCVTC_PRIVACY.md) · [Verification](VERIFICATION.md) |
+| Trace upstream sources and licenses | [Original README](docs/UPSTREAM_README.md) · [Source notices](SCVTC-NOTICES.md) |
+
+---
+
+<a id="credits"></a>
+
+## Attribution & Licenses
+
+Lumen is based on [zhengfang-apk](https://github.com/znjhahaha/zhengfang-apk), with school adaptation maintained by **zwwd1**. Original licenses and attribution are preserved in [LICENSE](LICENSE), [SCVTC-NOTICES.md](SCVTC-NOTICES.md) and the [OpenWakeUp license](LICENSE-OpenWakeUp-AGPL-3.0). Thanks to the upstream projects, Miuix, AndroidLiquidGlass and other component maintainers.
