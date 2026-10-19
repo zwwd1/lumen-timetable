@@ -1,7 +1,7 @@
 <div align="center">
 <img src="app/src/main/res/drawable-nodpi/campus_icon_portrait.webp" width="88" alt="Lumen icon">
 <h1>Lumen Timetable</h1>
-<p>Classes, grades and exams, with fewer steps.</p>
+<p>Timetables, grades, exams and credits for SCVTC students.</p>
 
 [![Release](https://img.shields.io/github/v/release/zwwd1/lumen-timetable?label=Download&color=2788ed)](https://github.com/zwwd1/lumen-timetable/releases/latest)
 ![Android](https://img.shields.io/badge/Android-13%2B-34a853?logo=android&logoColor=white)
@@ -11,7 +11,9 @@
 **[Download](#download) · [Screenshots](#screenshots) · [Features](#features) · [Quick Start](#start) · [Build](#build) · [Documentation](#docs)**
 </div>
 
-Lumen is an independent, unofficial adaptation of the original campus app for Sichuan Vocational and Technical College, maintained by **zwwd1**. It brings timetable, grades, exams, credits and common school services together. For a timetable-focused workflow with course editing, schedules and reminders, see [Gnomon](https://github.com/zwwd1/gnomon-timetable).
+Lumen brings together timetables, grades, exam schedules and credit information for students at Sichuan Vocational and Technical College. It shows saved records first and lets you refresh when needed. If the current semester has no grades yet, you can still browse earlier records.
+
+This is an unofficial adaptation of the campus Next app, maintained by zwwd1. Course editing, reminders and home-screen widgets are also included. For a timetable-focused app, see [Gnomon](https://github.com/zwwd1/gnomon-timetable). The two apps store their accounts and records separately.
 
 <details>
 <summary><strong>Contents</strong></summary>
@@ -23,7 +25,7 @@ Lumen is an independent, unofficial adaptation of the original campus app for Si
 - [Appearance & Daily Use](#appearance)
 - [Data & Privacy](#privacy)
 - [Implementation & Build](#build)
-- [Maintenance & Validation](#maintenance)
+- [Maintenance](#maintenance)
 - [FAQ](#faq)
 - [Documentation](#docs)
 - [Attribution & Licenses](#credits)
@@ -108,7 +110,7 @@ The background task attempts updates on a two-hour cycle, but Android, power, ne
 
 School authentication and queries connect directly to school services. Passwords and recoverable sessions are encrypted locally using Android Keystore-managed keys. Normal course exports do not include school credentials.
 
-Ordinary course records are stored in the app's private Room database, protected by the app sandbox and Android device-storage encryption. Upstream cloud sync and anonymous statistics are paused. AI requires a user-configured service; selected online features can still make network requests. School credentials are not sent to the maintainer or AI providers. See the [privacy document](docs/SCVTC_PRIVACY.md).
+Ordinary course records are stored in the app's private Room database, protected by the app sandbox and Android device-storage encryption; they are not encrypted field by field. Upstream cloud sync and anonymous statistics are paused. AI requires a user-configured service; selected online features can still make network requests. School credentials are not sent to the maintainer or AI providers. See the [privacy document](docs/SCVTC_PRIVACY.md).
 
 ---
 
@@ -136,11 +138,11 @@ Use tag `v1.2.16` for the source matching this release. Platform-specific code a
 
 <a id="maintenance"></a>
 
-## Maintenance & Validation
+## Maintenance
 
-Updates depend on the maintainer's available time. School interface or authentication changes may break functionality, and immediate repairs are not guaranteed. Source and build instructions remain available for independent maintenance.
+This is a personal project with no fixed update schedule. Changes to the school's login or data services may temporarily break some features. If you run into a problem, open an issue with your app version, device and steps to reproduce it. You are also welcome to fork the source.
 
-The 1.2.16 signed build, release provenance and in-place upgrade on **Redmi K40 / Android 13** have recorded checks. Fresh installs, all ROMs, prolonged Doze/reboot scheduling, notification delivery and continuous widget updates are not comprehensively covered. See [VERIFICATION.md](VERIFICATION.md) and [BUILD_PROVENANCE.json](BUILD_PROVENANCE.json) for the exact evidence and limits.
+The 1.2.16 release was checked against its build records and tested as an in-place upgrade on **Redmi K40 / Android 13**. Fresh installs, all ROMs, prolonged Doze/reboot scheduling, notification delivery and continuous widget updates are not comprehensively covered. See [VERIFICATION.md](VERIFICATION.md) and [BUILD_PROVENANCE.json](BUILD_PROVENANCE.json) for the recorded checks. 
 
 ---
 
@@ -167,6 +169,8 @@ The apps can coexist, but maintain separate data spaces. Choose whichever workfl
 <a id="docs"></a>
 
 ## Documentation
+
+The [documentation directory](docs/README.md) groups usage, privacy, development and historical notes. Most detailed guides are currently in Chinese.
 
 | Task | Read |
 | :--- | :--- |
