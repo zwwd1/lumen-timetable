@@ -137,12 +137,7 @@
 
 Kotlin / Compose 展示页面；川职认证在 `cn/scvtc/campus`，同步和页面投影在 `com/tyust/course/scvtc`，课程规则在 `school-core`。身份、学期和数据完整性校验通过后才写入 Room；网络或认证失败时保留最后成功的记录。
 
-```mermaid
-flowchart LR
-  SCHOOL["学校服务<br/>CAS / JWXT"] --> CHECK["认证与校验<br/>账号 · 学期 · 范围"]
-  CHECK --> LOCAL["本机保存<br/>Room / 查询缓存"]
-  LOCAL --> UI["原生页面<br/>课表 · 成绩 · 提醒"]
-```
+![从学校认证、校验到本机保存与页面展示的数据流程](docs/images/project-data-flow.svg)
 
 ### 自行构建
 

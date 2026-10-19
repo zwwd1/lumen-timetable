@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="150" viewBox="0 0 840 150" role="img" aria-labelledby="title desc">
+<title id="title">School data flow</title><desc id="desc">School services: CAS · JWXT → Validate data: Account · semester → Local storage: Room · query cache → Native UI: Courses · reminders. Failed reads keep the last valid cache.</desc>
+<style>text{font-family:system-ui,-apple-system,"Segoe UI","Noto Sans SC",sans-serif}.card{fill:#f0f6ff;stroke:#b8d1ee;stroke-width:1.5}.title{fill:#17385f;font-weight:650;font-size:18px}.detail{fill:#486783;font-size:13px}.arrow{stroke:#4d86c4;stroke-width:2;fill:none}.tip{fill:#4d86c4}.foot{fill:#667c92;font-size:12px}@media(prefers-color-scheme:dark){.card{fill:#182434;stroke:#405875}.title{fill:#e2edfa}.detail{fill:#b3c8df}.arrow{stroke:#86b2e5}.tip{fill:#86b2e5}.foot{fill:#a5b8cc}}</style>
+<defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path class="tip" d="M0 0 L7 3.5 L0 7 Z"/></marker></defs>
+<rect class="card" x="16" y="18" width="184" height="100" rx="16"/><text class="title" x="108" y="59" text-anchor="middle">School services</text><text class="detail" x="108" y="84" text-anchor="middle">CAS · JWXT</text>
+<rect class="card" x="224" y="18" width="184" height="100" rx="16"/><text class="title" x="316" y="59" text-anchor="middle">Validate data</text><text class="detail" x="316" y="84" text-anchor="middle">Account · semester</text>
+<rect class="card" x="432" y="18" width="184" height="100" rx="16"/><text class="title" x="524" y="59" text-anchor="middle">Local storage</text><text class="detail" x="524" y="84" text-anchor="middle">Room · query cache</text>
+<rect class="card" x="640" y="18" width="184" height="100" rx="16"/><text class="title" x="732" y="59" text-anchor="middle">Native UI</text><text class="detail" x="732" y="84" text-anchor="middle">Courses · reminders</text>
+<path class="arrow" d="M204 68 H218" marker-end="url(#arrow)"/>
+<path class="arrow" d="M412 68 H426" marker-end="url(#arrow)"/>
+<path class="arrow" d="M620 68 H634" marker-end="url(#arrow)"/>
+<text class="foot" x="420" y="143" text-anchor="middle">Failed reads keep the last valid cache.</text>
+</svg>

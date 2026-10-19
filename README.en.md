@@ -118,12 +118,7 @@ Ordinary course records are stored in the app's private Room database, protected
 
 Kotlin / Compose renders the native UI. School authentication lives in `cn/scvtc/campus`, sync and projections in `com/tyust/course/scvtc`, and shared validation rules in `school-core`. Account, semester and completeness checks precede Room writes.
 
-```mermaid
-flowchart LR
-  SCHOOL["School services<br/>CAS / JWXT"] --> CHECK["Authentication and validation<br/>Account / semester / scope"]
-  CHECK --> LOCAL["Local persistence<br/>Room / query cache"]
-  LOCAL --> UI["Native UI<br/>Timetable / grades / reminders"]
-```
+![School authentication, validation, local persistence and native UI](docs/images/project-data-flow.en.svg)
 
 Prepare **JDK 21 and Android SDK 37**, configure `JAVA_HOME` and `ANDROID_HOME`, and use the repository's Gradle Wrapper:
 
