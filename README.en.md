@@ -3,7 +3,7 @@
 <h1>Lumen Timetable</h1>
 <p>Timetables, grades, exams and credits for SCVTC students.</p>
 
-[![Release](https://img.shields.io/github/v/release/zwwd1/lumen-timetable?label=Download&color=2788ed)](https://github.com/zwwd1/lumen-timetable/releases/latest)
+[![Release](https://img.shields.io/badge/version-1.2.16-2788ed)](https://github.com/zwwd1/lumen-timetable/releases/tag/v1.2.16)
 ![Android](https://img.shields.io/badge/Android-13%2B-34a853?logo=android&logoColor=white)
 
 [简体中文](README.md) · [English](README.en.md)

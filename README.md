@@ -3,7 +3,7 @@
 <h1>Lumen 课程表</h1>
 <p>川职课表、成绩、考试与学分查询。</p>
 
-[![下载](https://img.shields.io/github/v/release/zwwd1/lumen-timetable?label=下载最新版&color=2788ed)](https://github.com/zwwd1/lumen-timetable/releases/latest)
+[![下载](https://img.shields.io/badge/version-1.2.16-2788ed)](https://github.com/zwwd1/lumen-timetable/releases/tag/v1.2.16)
 ![Android](https://img.shields.io/badge/Android-13%2B-34a853?logo=android&logoColor=white)
 
 [简体中文](README.md) · [English](README.en.md)
