@@ -332,7 +332,9 @@ fun SettingsRoute(
         onLogout = { if (isDemoMode) performLogout() else showLogoutDialog = true },
         onQuotaClick = { showQuotaDialog = true },
         onRefreshCookieClick = { refreshCookieManually() },
-        onLogExport = { com.tyust.course.utils.LogUtils.exportLogs(context) },
+        onLogExport = {
+            settingsScope.launch { com.tyust.course.utils.LogUtils.exportLogs(context) }
+        },
         onErrorReport = {
             val report = com.tyust.course.diagnostics.AppDiagnostics.latest(context)
             if (report != null) com.tyust.course.diagnostics.AppDiagnostics.showReport(context, report)
