@@ -116,6 +116,15 @@ fun SettingsScreen(
     showAccountBadges: Boolean = true
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    var showUsageGuide by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    if (showUsageGuide) com.tyust.course.scvtc.SchoolUsageGuide(
+        onDismiss = { showUsageGuide = false },
+        onConnect = {
+            showUsageGuide = false
+            context.startActivity(android.content.Intent(context, com.tyust.course.LoginActivity::class.java)
+                .putExtra(com.tyust.course.LoginActivity.EXTRA_RETURN_TO_CALLER, true))
+        }
+    )
     var showAppearanceDetails by remember { mutableStateOf(false) }
     if (showAppearanceDetails) com.tyust.course.scvtc.CampusAppearanceSettings { showAppearanceDetails = false }
     val scrollState = rememberScrollState()
@@ -259,6 +268,13 @@ fun SettingsScreen(
                 SettingsRow(icon = Icons.Outlined.AutoAwesome, iconTint = Color(0xFF5AC8FA), title = "AI 助手小澄", subtitle = "学习答疑、课表上下文与加密配置", onClick = { context.startActivity(android.content.Intent(context, com.tyust.course.scvtc.CampusAiActivity::class.java)) }, showDivider = false)
             }
             InsetGroupedSection(Modifier.moduleEntrance(3), header = "应用与支持") {
+                SettingsRow(
+                    icon = Icons.Outlined.Info,
+                    iconTint = Color(0xFF18796B),
+                    title = "使用指南",
+                    subtitle = "登录、课表、提醒、同步与备份，按步骤查看",
+                    onClick = { showUsageGuide = true }
+                )
                 SettingsRow(
                     icon = Icons.Outlined.Home,
                     iconTint = Color(0xFF5E5CE6),

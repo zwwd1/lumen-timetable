@@ -737,12 +737,10 @@ fun MainScreen(fragmentActivity: FragmentActivity,showSchoolConnection:Boolean=f
                     fragmentActivity.startActivity(Intent(fragmentActivity, com.tyust.course.scvtc.ScvtcWebActivity::class.java))
                 }
             }
-            if(showSchoolConnection) SystemDialog(
-                onDismissRequest={onSchoolConnectionChoice(false)},
-                title={Text("Lumen 课程表 · 使用指南",style=MaterialTheme.typography.titleLarge)},
-                confirmButton={SystemPrimaryButton("连接川职教务",{onSchoolConnectionChoice(true)},Modifier.fillMaxWidth())},
-                dismissButton={SystemSecondaryButton("稍后",{onSchoolConnectionChoice(false)},Modifier.fillMaxWidth())}
-            ) { Text("1. 连接学校\n填写学号和学校密码，登录后先读课表，再读成绩。密码加密记在本机。\n\n2. 找到需要的页面\n底栏切换课程、课表和设置，点课程看详情。成绩、学分从课程页打开。\n\n3. 调整课表\n课表右上角三点里有课表设置，可填节次时间、开提醒；设置里能调整外观和底栏。\n\n学校要求验证码时，在官方页面完成。暂不连接也可以先看看。") }
+            if(showSchoolConnection) com.tyust.course.scvtc.SchoolUsageGuide(
+                onDismiss = { onSchoolConnectionChoice(false) },
+                onConnect = { onSchoolConnectionChoice(true) }
+            )
             DialogHost(
                 state = dialogHostState,
                 modifier = Modifier.fillMaxSize()
