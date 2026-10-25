@@ -190,15 +190,16 @@ android {
 
 // Private original image input; never store payment materials in source control.
 def donationInput = providers.environmentVariable('SCVTC_DONATION_PNG').orNull
+def donationSourceFile = donationInput != null ? file(donationInput) : null
 def donationAssets = layout.buildDirectory.dir('generated/campus-donation')
 def stageCampusDonation = tasks.register('stageCampusDonation') {
     inputs.property('included', donationInput != null)
-    if (donationInput != null) inputs.file(file(donationInput))
+    if (donationSourceFile != null) inputs.file(donationSourceFile)
     outputs.dir(donationAssets)
     doLast {
         def destination = new File(donationAssets.get().asFile, 'epiphany-donation.png')
         if (donationInput == null) destination.delete()
-        else { destination.parentFile.mkdirs(); java.nio.file.Files.copy(file(donationInput).toPath(), destination.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING) }
+        else { destination.parentFile.mkdirs(); java.nio.file.Files.copy(donationSourceFile.toPath(), destination.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING) }
     }
 }
 android.sourceSets.main.assets.srcDir(donationAssets.get().asFile)
