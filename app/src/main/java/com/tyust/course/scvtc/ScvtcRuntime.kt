@@ -24,13 +24,17 @@ data class ScvtcSnapshot(val account:String,val semester:String,val payload:Stri
 @Dao interface ScvtcDao {
  @Query("SELECT EXISTS(SELECT 1 FROM school_schedules) OR EXISTS(SELECT 1 FROM school_services)") suspend fun hasLocalRecords():Boolean
  @Query("SELECT * FROM school_schedules WHERE account=:account AND semester=:semester") suspend fun read(account:String,semester:String):ScvtcSnapshot?
+ @Query("SELECT fetchedAt FROM school_schedules WHERE account=:account AND semester=:semester") suspend fun savedAt(account:String,semester:String):Long?
  @Insert(onConflict=OnConflictStrategy.REPLACE) suspend fun put(row:ScvtcSnapshot)
  @Query("UPDATE school_schedules SET recipe='' WHERE account=:account") suspend fun clearRecipes(account:String)
 }
 @Entity(tableName="school_services",primaryKeys=["account","semester","module"])
 data class ScvtcServiceSnapshot(val account:String,val semester:String,val module:String,val payload:String,val fetchedAt:Long)
+data class ServiceSavedTime(val module:String,val fetchedAt:Long)
 @Dao interface ScvtcServicesDao {
  @Query("SELECT * FROM school_services WHERE account=:account AND semester=:semester AND module=:module")suspend fun read(account:String,semester:String,module:String):ScvtcServiceSnapshot?
+ @Query("SELECT fetchedAt FROM school_services WHERE account=:account AND semester=:semester AND module=:module")suspend fun savedAt(account:String,semester:String,module:String):Long?
+ @Query("SELECT module, fetchedAt FROM school_services WHERE account=:account AND semester=:semester")suspend fun savedTimes(account:String,semester:String):List<ServiceSavedTime>
  @Insert(onConflict=OnConflictStrategy.REPLACE)suspend fun put(row:ScvtcServiceSnapshot)
 }
 @Database(entities=[ScvtcSnapshot::class,ScvtcServiceSnapshot::class],version=2,exportSchema=false)
@@ -265,13 +269,17 @@ object ScvtcRuntime {
  }
  suspend fun service(module:String,term:String=semester):Extraction?=db.services().read(account,term,module)?.let{decode(it.account,it.semester,it.module,it.payload)}
  suspend fun allGrades():Extraction?=service("grades","all")?:service("grades")
- suspend fun serviceSavedAt(module:String,a:String=account,t:String=semester):Long=db.services().read(a,t,module)?.fetchedAt?:0
+ suspend fun serviceSavedAt(module:String,a:String=account,t:String=semester):Long=db.services().savedAt(a,t,module)?:0
  private val serviceStatus get()=ServiceReadStatusStore(context.getSharedPreferences("school_service_status",0))
- internal suspend fun serviceStatuses(a:String=account,t:String=semester):List<ServiceReadStatus> =
-  (listOf("authentication","schedule")+cn.scvtc.campus.JwxtServices.endpoints.keys).map{module->
-   val savedAt=when(module){"authentication"->0L;"schedule"->db.schedules().read(a,t)?.fetchedAt?:0L;else->db.services().read(a,t,module)?.fetchedAt?:0L}
+ internal suspend fun serviceStatuses(a:String=account,t:String=semester):List<ServiceReadStatus> {
+  // Progress changes frequently; status rendering only needs timestamps, not encrypted payloads.
+  val serviceTimes=db.services().savedTimes(a,t).associate{it.module to it.fetchedAt}
+  val scheduleTime=db.schedules().savedAt(a,t)?:0L
+  return (listOf("authentication","schedule")+cn.scvtc.campus.JwxtServices.endpoints.keys).map{module->
+   val savedAt=when(module){"authentication"->0L;"schedule"->scheduleTime;else->serviceTimes[module]?:0L}
    serviceStatus.read(a,t,module,savedAt)
   }
+ }
  suspend fun saveService(next:Extraction,replace:Boolean,valid:()->Boolean):Extraction=mutex.withLock{
   require(next.module!="schedule"&&next.account==account&&next.semester==semester)
   require(next.warnings.isEmpty() && (next.records.isNotEmpty()||next.links.isNotEmpty()||next.full&&next.emptyConfirmed)){"服务页尚无可识别记录，原记录保留"}
