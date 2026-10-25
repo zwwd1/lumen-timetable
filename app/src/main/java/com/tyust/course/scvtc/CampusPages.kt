@@ -400,9 +400,13 @@ fun NextProfile(revision: Int, onLogin: () -> Unit, onTools: () -> Unit, onSched
     val account = ScvtcRuntime.account
     val term = ScvtcRuntime.semester
     val progress by ScvtcRuntime.syncState.collectAsState()
-    val services by produceState<List<ServiceReadStatus>>(emptyList(), account, term, revision, progress) {
-        value = emptyList()
-        if (account.isNotBlank() && term.isNotBlank()) value = withContext(Dispatchers.IO) { ScvtcRuntime.serviceStatuses(account, term) }
+    val services by key(account, term) {
+        produceState<List<ServiceReadStatus>>(emptyList(), revision, progress) {
+            // Keep this account's rows visible while reading newer timestamps. A scope
+            // switch gets a fresh state immediately, so another account's rows never flash.
+            if (account.isNotBlank() && term.isNotBlank())
+                value = withContext(Dispatchers.IO) { ScvtcRuntime.serviceStatuses(account, term) }
+        }
     }
     val snapshot by produceState<ScvtcSnapshot?>(null, account, term, revision) {
         value = null
