@@ -1,3 +1,21 @@
+# Lumen 1.2.17 检查记录
+
+2026-10-26。原签名 Release、R8、资源压缩、lintVital 与 14 项 APK 检查通过。12 项数据库 / 日期回归及 4 项 Gecko 窗口回归通过。
+
+- 源码：`f3ec799d94fb7cf4e320ff98137ac0978bd10992`
+- APK：`Lumen-Timetable-1.2.17.apk`
+- SHA-256：`0308f60022b09f72776339b418140a1a812d23e264986049bbd9594d0003ba11`
+- 包名：`cn.scvtc.campus.next`；versionCode：26；架构：arm64-v8a。
+- 原证书 SHA-256：`f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed`。
+- 检查涵盖：CRC、运行资产与原赞赏图、更新日志、APK 内源码提交、ELF / ZIP 对齐、ABI、R8 mapping、包名版本、Android 版本、应用名、非调试及 v2 原签名。
+
+本次没有手机安装、全新安装、覆盖升级、学校真实认证、通知送达、后台自然周期、组件或流畅度测量。Lumen 日志分享和两款首次指南的小屏 / 大字体 / 主题呈现仍待设备验收。历史实机记录仅作为历史信息，不算本版验收。
+
+BUILD_PROVENANCE.json 记录本次产物和验证范围。
+
+<details>
+<summary>上一公开版本的历史检查记录</summary>
+
 # Lumen 1.2.16 检查记录
 
 2026-10-17 至 18 日。原签名 Release、R8、lintVital、资源与原生库、ZIP/ELF 对齐和源码对应检查通过。覆盖安装在 Redmi K40 / Android 13 完成，原有数据保留。
@@ -11,3 +29,5 @@
 - 编译输入指纹：ddba139795e89c550329c6c44e65f448568781539620d0f7501aedce72a4aa10
 
 BUILD_PROVENANCE.json 记录对应包和实际检查范围。受控后台触发不等同于自然周期验收，也不代表所有机型已通过。
+
+</details>

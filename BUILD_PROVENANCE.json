@@ -1,68 +1,68 @@
 {
-  "version": "1.2.16",
-  "sourceCommit": "4eebde84a44cef042db1fa689b254061ebab6e3b",
+  "version": "1.2.17",
+  "sourceCommit": "f3ec799d94fb7cf4e320ff98137ac0978bd10992",
   "sourceRepository": "zwwd1/lumen-timetable",
   "artifact": {
-    "file": "Lumen-Timetable-1.2.16.apk",
+    "file": "Lumen-Timetable-1.2.17.apk",
     "packageName": "cn.scvtc.campus.next",
-    "versionCode": 25,
+    "versionCode": 26,
     "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
-    "size": 18504646,
-    "sha256": "00c0adb8b011c11ed0613d3cdbe32a10ad5b6cf64499d42be48c8d8d20b1372b",
+    "size": 18477226,
+    "sha256": "0308f60022b09f72776339b418140a1a812d23e264986049bbd9594d0003ba11",
     "abi": "arm64-v8a"
   },
   "releaseBuild": "passed",
-  "releaseLintVital": "passed",
+  "releaseLintVital": "No issues found.",
   "originalSignature": "passed",
   "artifactChecks": {
-    "manifest": true,
-    "originalSignature": true,
-    "zip16KiBAlignment": true,
-    "elf64Bit16KiBAlignment": true,
-    "elf32Bit4KiBAlignment": true,
-    "nativeAbiCoverage": true,
     "crc": true,
     "sourceAssets": true,
-    "sourceBaseCommit": true,
-    "localBuildInputs": true,
-    "originalDonationPng": true,
-    "noPlaintextCredentials": true,
-    "r8Mapping": true,
-    "appName": true,
-    "releaseHistory": true
+    "releaseHistory": true,
+    "originalDonationAsset": true,
+    "sourceCommit": true,
+    "nativeElfAlignment": true,
+    "abiCoverage": true,
+    "r8MappingMatchesDex": true,
+    "manifest": true,
+    "androidVersions": true,
+    "applicationName": true,
+    "originalSignature": true,
+    "v2Signature": true,
+    "zipAlignment": true
   },
-  "localBuildInputsSha256": "ddba139795e89c550329c6c44e65f448568781539620d0f7501aedce72a4aa10",
-  "sourceGitMatch": {
-    "contentDifferent": 0,
-    "lineEndingsOnly": 686
-  },
-  "mappingId": "a9be2717439b0ef3d04404a1564a23025c6b0940c271598e884490c208e73d6c",
-  "deviceTests": {
-    "device": "Redmi K40 / Android 13 / API 33",
-    "date": "2026-10-17至18日",
-    "artifactSha256": "00c0adb8b011c11ed0613d3cdbe32a10ad5b6cf64499d42be48c8d8d20b1372b",
-    "coverInstall": "passed",
-    "summary": "最终源码 4eebde84 的原签名 ARM64 包覆盖成功，原账号和课表保留。01:35 重开后六项服务保存；01:46 使用已经记住的输入在原生登录页提交成功，再次完成六项保存。今天、服务、文件入口与返回正常；学分、教务同步和外观页上滑收起标题并显示透明模糊，下拉恢复展开。文件学期输入在键盘上方可见；登录密码输入有焦点且键盘弹出，未改凭据。成绩页正常读取 39 条、63.5 学分。临时将系统动画倍率设为 1 复查同步页标题收放，之后恢复原值 0。发布后手机在线更新显示当前 v1.2.16 已是最新，应用内更新历史显示 1.2.16 与 1.2.15。系统退出记录无本包新增 Java 或原生崩溃。",
-    "limits": "保留现有数据，未清库验收首次安装、注销或覆盖恢复。密码聚焦时 ADB 截图返回空数据，该阶段只核对输入焦点与键盘状态。00:47 的两小时自然后台周期成功来自同轮 1.2.15，认证与后台调度代码未变，但不冒充 1.2.16 的自然周期验收。充电、Wi-Fi、无限制和自启动条件下测试；Doze、重启长时周期、全部自然过期类型、Android 17、通知送达、组件持续更新及未配置 AI/WebDAV 未验收。学校强制人工认证仍需本人；最终包未遇真实 nginx 错误现场。",
-    "newCrash": false,
-    "headerIntegration": {
-      "sync": "passed",
-      "credits": "passed",
-      "appearance": "passed",
-      "files": "passed",
-      "pullDownExpand": "passed",
-      "backNavigation": "passed",
-      "fileKeyboardAvoidance": "passed",
-      "loginKeyboard": "focus_and_keyboard_confirmed_secure_capture_unavailable",
-      "systemAnimationTestScale": 1,
-      "restoredAnimationScale": 0
+  "mappingId": "b81ecf05990e4f4d21217611275c0941b0cc85f00283dc02e3bfd3e306f647e7",
+  "mappingSha256": "1d56c34702f700820ce1aa6ca52bb275a8f214a84af6d2acfc25558632d6de4d",
+  "desktopTests": {
+    "targetedDatabaseAndSchoolDate": {
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
     },
-    "nativeRememberedLogin": "passed_2026-10-18_01:46",
-    "servicesSaved": 6,
-    "naturalPeriodicSync": "observed_v1.2.15_00:47_same_scheduler_not_yet_due_v1.2.16",
-    "freshInstall": "not_run_preserve_user_data",
-    "onlineUpdater": "passed_v1.2.16_after_publication",
-    "inAppReleaseHistory": "passed_v1.2.16_and_v1.2.15"
+    "geckoWindowAccess": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
   },
-  "additionalArtifacts": []
+  "deviceTests": {
+    "status": "not_run_for_this_release",
+    "coverInstall": "not_run",
+    "freshInstall": "not_run",
+    "schoolAuthentication": "not_run",
+    "performance": "not_measured",
+    "limits": "首次指南、小屏大字体、真实学校登录、通知、后台自然周期、组件与日志分享均待手机验收；历史版本结果不算本版验收。"
+  },
+  "additionalArtifacts": [],
+  "pluginPlatform": {
+    "verification": "live platform snapshot via validating Node TLS",
+    "sdkVersion": "3.7.2",
+    "contractVersion": "3.7.2",
+    "ruleVersion": "2026-10-15.1",
+    "hostAssets": "all 10 runtime files match",
+    "sdkAndStarter": "hashes and contract locks match",
+    "apiStaticAndWiki": "consistent",
+    "promotionGate": "unchanged; GitHub Actions must independently pass"
+  }
 }
