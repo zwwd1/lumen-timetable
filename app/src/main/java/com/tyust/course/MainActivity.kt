@@ -746,11 +746,11 @@ fun MainScreen(fragmentActivity: FragmentActivity,showSchoolConnection:Boolean=f
                 modifier = Modifier.fillMaxSize()
             )
 
-            if (updateState.showDialog()) {
+            if (!showSchoolConnection && updateState.showDialog()) {
                 UpdateDialog(onDismiss = { updateState.dismiss() })
             }
 
-            if (sessionNotice.token == session.token && sessionNotice.visible && isTokenExpired) {
+            if (!showSchoolConnection && sessionNotice.token == session.token && sessionNotice.visible && isTokenExpired) {
                 key(session.token) {
                     com.tyust.course.ui.system.SessionExpiryPrompt(
                         hasCachedContent = pageData.hasCachedContent,

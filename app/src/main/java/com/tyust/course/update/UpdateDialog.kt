@@ -10,6 +10,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.SystemUpdate
+import androidx.compose.material.icons.outlined.Verified
 import com.tyust.course.ui.system.SystemDialog
 import com.tyust.course.ui.system.SystemPrimaryButton
 import com.tyust.course.ui.system.SystemSecondaryButton
@@ -20,6 +26,7 @@ fun UpdateDialog(manager: UpdateManager = UpdateManager.getInstance(LocalContext
     val info = state.manifest
     val active = state.active
     var showMirrors by remember { mutableStateOf(false) }
+    var showNotes by remember { mutableStateOf(false) }
     val current = manager.getCurrentVersionCode()
     val canDownload = info?.isInstallCandidate(current, Build.VERSION.SDK_INT, state.testChannel) == true
     SystemDialog(
@@ -37,6 +44,25 @@ fun UpdateDialog(manager: UpdateManager = UpdateManager.getInstance(LocalContext
         dismissButton = { SystemSecondaryButton(text = if (active) "后台继续" else "稍后", onClick = onDismiss, modifier = Modifier.fillMaxWidth()) }
     ) {
         Column(Modifier.fillMaxWidth().heightIn(max = 420.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            val checking = state.check == UpdateManager.Check.CHECKING
+            val failed = state.check in setOf(UpdateManager.Check.FAILED, UpdateManager.Check.CACHED)
+            val tint = if (failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(color = tint.copy(alpha = .1f), shape = CircleShape) {
+                    Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) {
+                        if (checking) CircularProgressIndicator(Modifier.size(25.dp), strokeWidth = 2.dp)
+                        else Icon(if (failed) Icons.Outlined.CloudOff else if (canDownload) Icons.Outlined.SystemUpdate else Icons.Outlined.Verified,
+                            null, tint = tint, modifier = Modifier.size(27.dp))
+                    }
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(when { checking -> "正在连接更新服务"; failed -> "暂未确认最新版本";
+                        canDownload -> "有可用的更新"; state.check == UpdateManager.Check.UP_TO_DATE -> "当前版本已是最新"; else -> "官方版本更新" },
+                        style = MaterialTheme.typography.titleMedium)
+                    Text(if (failed) "稍后可重试，已有数据不受影响" else "官方发布 · 更新清单签名校验",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
             Text(state.message.ifBlank { "检查版本与下载进度" }, color = if (state.errorCode.isNotBlank()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
             if (state.errorCode.isNotBlank()) Text("错误代码：${state.errorCode}", style = MaterialTheme.typography.bodySmall)
             if (state.check == UpdateManager.Check.CACHED) Text("当前为缓存信息，无法确认是否已有更新版本。", style = MaterialTheme.typography.bodySmall)
@@ -46,10 +72,23 @@ fun UpdateDialog(manager: UpdateManager = UpdateManager.getInstance(LocalContext
                 else -> "当前版本 v${manager.getCurrentVersionName()}"
             }
             Text(versionLabel, style = MaterialTheme.typography.titleMedium)
+            if (info != null && !canDownload) Text("${if (failed) "上次记录" else "公开版本"} v${info.versionName}",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val checkedAt = manager.getLastSuccessfulCheckAt()
+            val checkedLabel = remember(checkedAt) { if (checkedAt == 0L) "尚无成功记录" else
+                java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT)
+                    .format(java.util.Date(checkedAt)) }
+            Text("最近成功检查：$checkedLabel", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (canDownload && info != null) {
                 if (info.forceUpdate) Text("此版本包含重要更新，请尽快安装", color = MaterialTheme.colorScheme.error)
                 if (info.releaseNotes.isNotBlank()) Text(info.releaseNotes, style = MaterialTheme.typography.bodyMedium)
             }
+            if (!canDownload && !info?.releaseNotes.isNullOrBlank()) {
+                SystemDialogButton(onClick = { showNotes = !showNotes }) { Text(if (showNotes) "收起更新说明" else "查看更新说明") }
+                if (showNotes) Text(info!!.releaseNotes, style = MaterialTheme.typography.bodySmall)
+            }
+            SystemDialogButton(onClick = { manager.openReleasePage() }) { Text("查看官方发布页") }
             if (canDownload) state.mirror?.let { Text("下载线路：${it.name}", style = MaterialTheme.typography.bodySmall) }
             if (canDownload && (active || state.phase in setOf(UpdateManager.Phase.PAUSED, UpdateManager.Phase.READY))) {
                 LinearProgressIndicator(progress = { state.progress / 100f }, modifier = Modifier.fillMaxWidth())

@@ -61,6 +61,16 @@ class UpdateManagerTest {
         val m = create(server); repeat(20) { m.checkForUpdate(true) }; awaitCheck(m)
         assertEquals(1, server.requestCount)
     } }
+    @Test fun closingPendingCheckDoesNotReopenWhenNewVersionArrives() { MockWebServer().use { server ->
+        server.enqueue(MockResponse().setBodyDelay(500, TimeUnit.MILLISECONDS).setBody(
+            UpdateFixtures.envelope(UpdateFixtures.payload().put("versionCode", 1000).put("versionName", "1.0.1000").toString())))
+        val m = create(server); m.checkForUpdate(true)
+        assertNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+        m.dismiss()
+        val result = awaitCheck(m)
+        assertEquals(UpdateManager.Check.AVAILABLE, result.check)
+        assertFalse(result.showDialog)
+    } }
     @Test fun failedRefreshPreservesVerifiedCache() { MockWebServer().use { server ->
         val dir = File(app.filesDir, "app-updates").apply { mkdirs() }
         File(dir, "stable-manifest.json").writeText(UpdateFixtures.envelope())

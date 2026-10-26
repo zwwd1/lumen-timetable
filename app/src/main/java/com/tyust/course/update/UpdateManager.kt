@@ -68,6 +68,7 @@ class UpdateManager internal constructor(private val context: Context,
     private val checkMutex = Mutex()
     private val commands = Mutex()
     private var checkJob: Job? = null
+    private val dialogDismissals = java.util.concurrent.atomic.AtomicLong(0)
     private var downloadJob: Job? = null
     private var task: UpdateManifest? = null
     private var taskEtag: String? = null
@@ -79,6 +80,13 @@ class UpdateManager internal constructor(private val context: Context,
 
     fun getCurrentVersionName(): String = packageInfo().versionName.orEmpty()
     fun getCurrentVersionCode(): Int = versionCode(packageInfo()).toInt()
+    fun getLastSuccessfulCheckAt(): Long = prefs.getLong("last-check:$channel", 0L)
+    fun openReleasePage() {
+        runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://github.com/zwwd1/lumen-timetable/releases")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }.onFailure { mutable.update { it.copy(message = "暂时无法打开发布页，请稍后重试", errorCode = "BROWSER_UNAVAILABLE") } }
+    }
     @Suppress("DEPRECATION") private fun packageInfo(): PackageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
     @Suppress("DEPRECATION") private fun versionCode(info: PackageInfo): Long =
         if (Build.VERSION.SDK_INT >= 28) info.longVersionCode else info.versionCode.toLong()
@@ -145,6 +153,7 @@ class UpdateManager internal constructor(private val context: Context,
                 if (!manual && ((lastSuccess > 0 && now - lastSuccess in 0 until CHECK_INTERVAL) ||
                     (lastAttempt > 0 && now - lastAttempt in 0 until FAILURE_RETRY))) return@withLock
                 prefs.edit().putLong("last-attempt:$selected", now).apply()
+                val dismissalAtStart = dialogDismissals.get()
                 mutable.update { it.copy(check = Check.CHECKING, showDialog = it.showDialog || manual, message = "正在检查更新…", errorCode = "") }
                 checkJob = scope.launch {
                     try {
@@ -175,7 +184,7 @@ class UpdateManager internal constructor(private val context: Context,
                         val activeTask = s.active || s.phase in setOf(Phase.PAUSED, Phase.READY)
                         s.copy(manifest = if (activeTask) s.manifest else value,
                             check = when { chosen == null && previous != null -> Check.CACHED; chosen == null -> Check.FAILED; available -> Check.AVAILABLE; else -> Check.UP_TO_DATE },
-                            showDialog = s.showDialog || (chosen != null && available && canRemind),
+                            showDialog = s.showDialog || (chosen != null && available && canRemind && dialogDismissals.get() == dismissalAtStart),
                             message = if (activeTask) s.message else when { chosen == null && previous != null -> "检查失败，显示上次验证的更新信息"; chosen == null -> "检查更新失败，请重试或更换网络";
                                 value != null && value.minSdk > Build.VERSION.SDK_INT -> "新版本不支持当前 Android 版本";
                                 available -> "发现新版本"; else -> "已是最新版本" },
@@ -189,7 +198,8 @@ class UpdateManager internal constructor(private val context: Context,
         }
     }
     fun dismiss() {
-        mutable.value.manifest?.let { prefs.edit().putLong("later:${it.channel}:${it.versionCode}", System.currentTimeMillis()).apply() }
+        dialogDismissals.incrementAndGet()
+        mutable.value.manifest?.let { prefs.edit().putLong("later:${it.channel}:${it.versionCode}", nowMillis()).apply() }
         mutable.update { it.copy(showDialog = false) }
     }
     fun showDownload() { mutable.update { it.copy(showDialog = true) } }

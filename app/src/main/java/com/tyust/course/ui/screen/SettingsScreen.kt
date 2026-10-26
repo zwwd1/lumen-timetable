@@ -128,22 +128,12 @@ fun SettingsScreen(
     var showAppearanceDetails by remember { mutableStateOf(false) }
     if (showAppearanceDetails) com.tyust.course.scvtc.CampusAppearanceSettings { showAppearanceDetails = false }
     val scrollState = rememberScrollState()
-    // 折叠进度随滚动偏移连续变化（约 96px 行程），全程跟手
-    val headerCollapse by remember {
-        derivedStateOf { (scrollState.value / 96f).coerceIn(0f, 1f) }
-    }
-    Scaffold(
-        containerColor = Color.Transparent,
-        topBar = {
-            Box(Modifier.moduleEntrance(0)) {
-            SystemTopBar(
-                title = "设置",
-                subtitle = "账号、外观与应用偏好",
-                collapseFraction = headerCollapse,
-                actions = {com.tyust.course.scvtc.CampusQuickActions()}
-            )
-            }
-        }
+    val headerCollapse = com.tyust.course.ui.system.rememberScrollHeaderCollapse(scrollState)
+    com.tyust.course.ui.system.GlassPageScaffold(
+        title = "设置",
+        subtitle = "账号、外观与应用偏好",
+        collapseFraction = headerCollapse,
+        actions = { com.tyust.course.scvtc.CampusQuickActions() }
     ) { padding ->
         // 内容延伸到玻璃顶栏下方，滚动时从顶栏底下穿过（padding 施加在滚动内容内部）
         Column(

@@ -208,11 +208,9 @@ fun SystemTopBar(
     // iOS 26 分离式头部：展开态大标题直接浮在内容上（无背景），
     // 滚动折叠时标题缩小、浮出细玻璃条。折叠进度由滚动偏移连续驱动、
     // 全程跟手；高刚度临界阻尼弹簧只负责抹平 LazyList 快滚时的跳变。
-    val collapse by animateFloatAsState(
-        targetValue = collapseFraction.coerceIn(0f, 1f),
-        animationSpec = spring(dampingRatio = 1f, stiffness = 900f),
-        label = "headerCollapse"
-    )
+    // Scroll already supplies continuous motion. A second spring re-targeted every frame
+    // extends layout work after each fling and makes the toolbar trail the user's finger.
+    val collapse = collapseFraction.coerceIn(0f, 1f)
     val surfaceTint = appearance.surface.copy(
         alpha = if (customWallpaper) appearance.surface.alpha else if (isLightTheme) 0.46f else 0.34f
     )
@@ -1005,6 +1003,7 @@ fun SystemDialog(
     presentation: DialogPresentation = DialogPresentation.Center,
     ownerKey: String? = null,
     scrollContent: Boolean = false,
+    contentPadding: androidx.compose.foundation.layout.PaddingValues? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val dialogHost = LocalDialogHost.current
@@ -1018,6 +1017,7 @@ fun SystemDialog(
             icon = icon,
             title = title,
             scrollContent = scrollContent,
+            contentPadding = contentPadding,
             content = content
         )
     }
@@ -1076,6 +1076,7 @@ private fun SystemDialogContent(
     icon: @Composable (() -> Unit)?,
     title: @Composable (() -> Unit)?,
     scrollContent: Boolean,
+    contentPadding: androidx.compose.foundation.layout.PaddingValues?,
     content: @Composable ColumnScope.() -> Unit
 ) {
     // iOS squircle：连续曲率，避免圆弧与直边交界处的折角感
@@ -1221,10 +1222,10 @@ private fun SystemDialogContent(
             androidx.compose.material3.LocalContentColor provides appearance.onSurface) {
         ProvideWallpaperAppearance(appearance) {
             Column(
-                modifier = Modifier.padding(
+                modifier = Modifier.padding(contentPadding ?: androidx.compose.foundation.layout.PaddingValues(
                     horizontal = dialogHorizontalPadding,
                     vertical = dialogVerticalPadding
-                ),
+                )),
                 horizontalAlignment = Alignment.Start
             ) {
             if (icon != null) {
