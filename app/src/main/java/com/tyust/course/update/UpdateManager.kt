@@ -96,6 +96,7 @@ class UpdateManager internal constructor(private val context: Context,
         testSources?.let { return it(channel) }
         return listOf(
             "https://raw.githubusercontent.com/zwwd1/lumen-timetable/main/updates/$channel.json",
+            "https://gh-proxy.com/https://raw.githubusercontent.com/zwwd1/lumen-timetable/main/updates/$channel.json",
             "https://api.github.com/repos/zwwd1/lumen-timetable/contents/updates/$channel.json?ref=main"
         )
     }
@@ -151,7 +152,7 @@ class UpdateManager internal constructor(private val context: Context,
                     val results = java.util.Collections.synchronizedList(mutableListOf<UpdateManifest>())
                     val failures = java.util.Collections.synchronizedList(mutableListOf<Exception>())
                     withTimeoutOrNull(12_000) {
-                        val semaphore = Semaphore(2)
+                        val semaphore = Semaphore(3)
                         coroutineScope { sources(selected).map { url -> launch {
                             semaphore.withPermit {
                                 try { results.add(fetch(url, selected)) }
