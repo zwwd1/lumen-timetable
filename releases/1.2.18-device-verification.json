@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "date": "2026-10-26",
+  "device": "Redmi K40",
+  "android": "13",
+  "version": "1.2.18",
+  "versionCode": 27,
+  "installedApkSha256": "0f590d4a580b42ad45c65685f712d12448e05a1091dfc7c8c79052d8b54facd4",
+  "installation": "Original-signature cover upgrade from 1.2.16 through the normal file-manager package installer, using its per-install authorization; firstInstallTime unchanged.",
+  "scenarios": [
+    "One saved account retained; school course synchronization succeeds and an existing course is displayed.",
+    "Timetable settings show all ten period times matching the supplied school timetable.",
+    "Schedule settings open and return normally.",
+    "Foreground automatic and manual online checks succeed: current=27 remote=25 sources=2 failures=1 before the new release is published.",
+    "Manual update dialog shows the up-to-date result rather than cached-failure text.",
+    "All six usage-guide pages open, including the normal and practical school timetable instructions.",
+    "No new native/Java crash observed in the app process during these actions."
+  ],
+  "postPublicationFeedVerification": {
+    "status": "passed",
+    "deviceLog": "check=UP_TO_DATE current=27 remote=27 sources=2 failures=1",
+    "deviceLogTime": "2026-10-26 20:57:16.861",
+    "publicSignature": "verified against the bundled lumen-update-20261026 key",
+    "publicApkDownload": "Full public APK downloaded; original SHA-256, size, checksum sidecar and source provenance match."
+  },
+  "limits": [
+    "Newer-version prompt, failed-network retry and signature rejection are covered by targeted desktop regressions; these scenarios have not been forced on the phone.",
+    "Fresh installation, natural background cycles, reminder delivery and frame-rate performance are not tested.",
+    "Xiaomi USB-install switch remains blocked by temporary restriction 3-1; normal package installation succeeds."
+  ]
+}
