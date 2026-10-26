@@ -150,7 +150,8 @@ class ScheduleReminderScheduler private constructor(private val context: Context
         reconcile()
     }
 
-    fun timeBase(account: String, term: String): ScheduleTimeBase? = calendars.read(account, term)
+    fun timeBase(account: String, term: String): ScheduleTimeBase? = calendars.read(account, term)?.withPeriodDefaults(
+        com.tyust.course.manager.ScheduleSettingsManager.getInstance().apply { init(context) }.getPeriodTimes(account))
 
     fun updateTimeBase(account: String, term: String, value: ScheduleTimeBase) {
         if (!calendars.write(account, term, value)) return

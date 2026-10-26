@@ -61,6 +61,6 @@ class ScheduleDisplayStoreTest {
         manager.savePeriodTimes(listOf(ScheduleSettingsManager.PeriodTime(1, "09:00", "09:45")))
         assertTrue(manager.revision > before)
         assertEquals("09:00", ScheduleSettingsManager(prefs).getPeriodTimes().first().startTime)
-        assertEquals("08:00", manager.getPeriodTimes("different-account").first().startTime)
+        assertEquals("08:30", manager.getPeriodTimes("different-account").first().startTime)
     }
 }

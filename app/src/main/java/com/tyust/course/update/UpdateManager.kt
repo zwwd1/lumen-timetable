@@ -28,7 +28,8 @@ import java.util.concurrent.TimeUnit
 class UpdateManager internal constructor(private val context: Context,
     private val testKeys: Map<String, java.security.PublicKey>? = null,
     private val testSources: ((String) -> List<String>)? = null,
-    private val allowedUrl: (String) -> Boolean = UpdateManifestVerifier::validUrl) {
+    private val allowedUrl: (String) -> Boolean = UpdateManifestVerifier::validUrl,
+    private val nowMillis: () -> Long = System::currentTimeMillis) {
     enum class Check { IDLE, CHECKING, AVAILABLE, UP_TO_DATE, FAILED, CACHED }
     enum class Phase { IDLE, PREPARING, CONNECTING, DOWNLOADING, SWITCHING, WAITING_NETWORK, PAUSED, VERIFYING, READY, FAILED, CANCELLED }
     data class State(val manifest: UpdateManifest? = null, val check: Check = Check.IDLE,
@@ -43,7 +44,8 @@ class UpdateManager internal constructor(private val context: Context,
         fun getInstance(context: Context): UpdateManager = instance ?: synchronized(this) {
             instance ?: UpdateManager(context.applicationContext).also { instance = it }
         }
-        private const val SIX_HOURS = 6 * 60 * 60 * 1000L
+        private const val CHECK_INTERVAL = 15 * 60 * 1000L
+        private const val FAILURE_RETRY = 60 * 1000L
         private const val DAY = 24 * 60 * 60 * 1000L
     }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -61,8 +63,8 @@ class UpdateManager internal constructor(private val context: Context,
     private val mutable = MutableStateFlow(State(testChannel = prefs.getBoolean("test", false)))
     val state = mutable.asStateFlow()
     private val transfer = UpdateTransfer()
-    private val http = UpdateTransfer.client().newBuilder().connectTimeout(3, TimeUnit.SECONDS)
-        .readTimeout(4, TimeUnit.SECONDS).callTimeout(5, TimeUnit.SECONDS).build()
+    private val http = UpdateTransfer.client().newBuilder().connectTimeout(5, TimeUnit.SECONDS)
+        .readTimeout(8, TimeUnit.SECONDS).callTimeout(10, TimeUnit.SECONDS).build()
     private val checkMutex = Mutex()
     private val commands = Mutex()
     private var checkJob: Job? = null
@@ -92,7 +94,10 @@ class UpdateManager internal constructor(private val context: Context,
     }
     private fun sources(channel: String): List<String> {
         testSources?.let { return it(channel) }
-        return listOf("https://raw.githubusercontent.com/zwwd1/lumen-timetable/main/updates/$channel.json")
+        return listOf(
+            "https://raw.githubusercontent.com/zwwd1/lumen-timetable/main/updates/$channel.json",
+            "https://api.github.com/repos/zwwd1/lumen-timetable/contents/updates/$channel.json?ref=main"
+        )
     }
     private suspend fun fetch(url: String, selectedChannel: String): UpdateManifest {
         var target = url
@@ -100,6 +105,7 @@ class UpdateManager internal constructor(private val context: Context,
             if (!allowedUrl(target)) updateError("MANIFEST_URL", "更新地址不受支持")
             val key = "etag:$url"; val stored = cached(selectedChannel)
             val builder = Request.Builder().url(target).header("Cache-Control", "no-cache")
+                .header("Accept", "application/vnd.github.raw+json").header("User-Agent", "Lumen-Timetable")
             if (stored != null) prefs.getString(key, null)?.let { builder.header("If-None-Match", it) }
             http.newCall(builder.build()).awaitResponse().use { response ->
                 if (response.code in setOf(301, 302, 303, 307, 308)) {
@@ -132,28 +138,36 @@ class UpdateManager internal constructor(private val context: Context,
             restore.join()
             checkMutex.withLock {
                 if (checkJob?.isActive == true) { if (manual) mutable.update { it.copy(showDialog = true) }; return@withLock }
-                val selected = channel; val now = System.currentTimeMillis()
-                if (!manual && now - prefs.getLong("last-check:$selected", 0) < SIX_HOURS) return@withLock
-                prefs.edit().putLong("last-check:$selected", now).apply()
+                val selected = channel; val now = nowMillis()
+                val lastSuccess = prefs.getLong("last-check:$selected", 0)
+                val lastAttempt = prefs.getLong("last-attempt:$selected", 0)
+                if (!manual && ((lastSuccess > 0 && now - lastSuccess in 0 until CHECK_INTERVAL) ||
+                    (lastAttempt > 0 && now - lastAttempt in 0 until FAILURE_RETRY))) return@withLock
+                prefs.edit().putLong("last-attempt:$selected", now).apply()
                 mutable.update { it.copy(check = Check.CHECKING, showDialog = it.showDialog || manual, message = "正在检查更新…", errorCode = "") }
                 checkJob = scope.launch {
                     try {
                     val previous = cached(selected)
                     val results = java.util.Collections.synchronizedList(mutableListOf<UpdateManifest>())
+                    val failures = java.util.Collections.synchronizedList(mutableListOf<Exception>())
                     withTimeoutOrNull(12_000) {
                         val semaphore = Semaphore(2)
                         coroutineScope { sources(selected).map { url -> launch {
                             semaphore.withPermit {
                                 try { results.add(fetch(url, selected)) }
                                 catch (e: CancellationException) { throw e }
-                                catch (_: Exception) { /* A failed source never becomes "up to date". */ }
+                                catch (e: Exception) { failures.add(e) }
                             }
                         } }.joinAll() }
                     }
                     if (channel != selected) return@launch
                     val chosen = UpdateManifestVerifier.choose(results.toList(), previous)
                     val value = chosen ?: previous
-                    if (chosen != null) write(cacheFile(selected), chosen.envelope)
+                    if (chosen != null) {
+                        write(cacheFile(selected), chosen.envelope)
+                        prefs.edit().putLong("last-check:$selected", nowMillis()).apply()
+                    }
+                    val failure = failures.filterIsInstance<UpdateFailure>().firstOrNull()
                     val available = value != null && value.versionCode > getCurrentVersionCode() && value.minSdk <= Build.VERSION.SDK_INT
                     val canRemind = value?.let { it.forceUpdate || now - prefs.getLong("later:${it.channel}:${it.versionCode}", 0) >= DAY } ?: false
                     mutable.update { s ->
@@ -164,8 +178,9 @@ class UpdateManager internal constructor(private val context: Context,
                             message = if (activeTask) s.message else when { chosen == null && previous != null -> "检查失败，显示上次验证的更新信息"; chosen == null -> "检查更新失败，请重试或更换网络";
                                 value != null && value.minSdk > Build.VERSION.SDK_INT -> "新版本不支持当前 Android 版本";
                                 available -> "发现新版本"; else -> "已是最新版本" },
-                            errorCode = if (activeTask) s.errorCode else if (chosen == null) "CHECK_FAILED" else "")
+                            errorCode = if (activeTask) s.errorCode else if (chosen == null) failure?.code ?: "CHECK_FAILED" else "")
                     }
+                    android.util.Log.i("LumenUpdate", "check=${mutable.value.check} current=${getCurrentVersionCode()} remote=${value?.versionCode} sources=${results.size} failures=${failures.size}")
                     } catch (e: CancellationException) { throw e }
                     catch (_: Exception) { if (channel == selected) mutable.update { it.copy(check = Check.FAILED, message = "检查更新失败，请重试", errorCode = "CHECK_FAILED") } }
                 }

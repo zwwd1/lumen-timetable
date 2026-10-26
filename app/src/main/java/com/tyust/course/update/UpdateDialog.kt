@@ -38,6 +38,7 @@ fun UpdateDialog(manager: UpdateManager = UpdateManager.getInstance(LocalContext
     ) {
         Column(Modifier.fillMaxWidth().heightIn(max = 420.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(state.message.ifBlank { "检查版本与下载进度" }, color = if (state.errorCode.isNotBlank()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+            if (state.errorCode.isNotBlank()) Text("错误代码：${state.errorCode}", style = MaterialTheme.typography.bodySmall)
             if (state.check == UpdateManager.Check.CACHED) Text("当前为缓存信息，无法确认是否已有更新版本。", style = MaterialTheme.typography.bodySmall)
             val versionLabel = when {
                 canDownload && info!!.versionCode > current -> "v${manager.getCurrentVersionName()} → v${info.versionName}"

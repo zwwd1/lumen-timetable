@@ -111,4 +111,39 @@ class UpdateManagerTest {
         assertThrows(UpdateFailure::class.java) { m.verifyApk(UpdateFixtures.manifest(), file) }
     } }
 
+    @Test fun failedAutomaticCheckCanRetryAfterOneMinute() { MockWebServer().use { server ->
+        var now = 1_800_000_000_000L
+        val m = UpdateManager(app, UpdateFixtures.keys, { listOf(server.url("/manifest").toString()) },
+            { it.startsWith(server.url("/").toString()) }, { now }).also { manager = it }
+        server.enqueue(MockResponse().setResponseCode(503))
+        m.checkForUpdate()
+        assertEquals(UpdateManager.Check.FAILED, awaitCheck(m).check)
+        assertEquals(0L, app.getSharedPreferences("app_update_v2", 0).getLong("last-check:stable", 0))
+        now += 61_000
+        server.enqueue(MockResponse().setBody(UpdateFixtures.envelope(UpdateFixtures.payload().put("versionCode", 1000).toString())))
+        m.checkForUpdate()
+        runBlocking { withTimeout(8000) { m.state.first { it.check == UpdateManager.Check.AVAILABLE } } }
+        assertEquals(2, server.requestCount)
+    } }
+
+    @Test fun oneFailedSourceDoesNotHideAnotherVerifiedSource() { MockWebServer().use { server ->
+        server.enqueue(MockResponse().setResponseCode(503))
+        server.enqueue(MockResponse().setBody(UpdateFixtures.envelope(UpdateFixtures.payload().put("versionCode", 1000).toString())))
+        val m = UpdateManager(app, UpdateFixtures.keys,
+            { listOf(server.url("/raw").toString(), server.url("/api").toString()) },
+            { it.startsWith(server.url("/").toString()) }).also { manager = it }
+        m.checkForUpdate(true)
+        assertEquals(UpdateManager.Check.AVAILABLE, awaitCheck(m).check)
+        assertEquals(2, server.requestCount)
+    } }
+
+    @Test fun manualCheckBypassesRecentSuccessfulAutomaticCheck() { MockWebServer().use { server ->
+        val m = create(server)
+        app.getSharedPreferences("app_update_v2", 0).edit().putLong("last-check:stable", System.currentTimeMillis()).commit()
+        server.enqueue(MockResponse().setBody(UpdateFixtures.envelope()))
+        m.checkForUpdate(true)
+        assertNotEquals(UpdateManager.Check.FAILED, awaitCheck(m).check)
+        assertEquals(1, server.requestCount)
+    } }
+
 }

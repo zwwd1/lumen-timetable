@@ -85,7 +85,7 @@ class ScheduleSettingsManager internal constructor(private var prefs: SharedPref
     // ============ 节次数量 ============
     
     var periodCount: Int
-        get() = getScopedInt(KEY_PERIOD_COUNT, 12)
+        get() = getScopedInt(KEY_PERIOD_COUNT, 10)
         set(value) {
             prefs?.edit()?.putInt(scopedKey(KEY_PERIOD_COUNT), value)
                 ?.remove(scopedKey(KEY_PERIOD_COUNT) + "_provider")?.remove(KEY_PERIOD_COUNT)?.apply()
@@ -162,14 +162,14 @@ class ScheduleSettingsManager internal constructor(private var prefs: SharedPref
                         endTime = obj.getString("end")
                     ))
                 }
+                if (list.isNotEmpty() && list.all { it.startTime.isBlank() && it.endTime.isBlank() }) {
+                    val defaults = getDefaultPeriodTimes().associateBy { it.period }
+                    return list.map { defaults[it.period] ?: it }
+                }
                 return list
             } catch (e: Exception) {
                 // ignore
             }
-        }
-        if (UserManager.getInstance().currentSchool?.id == "scvtc") {
-            // This school has not provided verified clock times. Keep periods usable without inventing times.
-            return (1..12).map { PeriodTime(it, "", "") }
         }
         return getDefaultPeriodTimes()
     }
@@ -233,20 +233,7 @@ class ScheduleSettingsManager internal constructor(private var prefs: SharedPref
     }
     
     fun getDefaultPeriodTimes(): List<PeriodTime> {
-        return listOf(
-            PeriodTime(1, "08:00", "08:45"),
-            PeriodTime(2, "08:55", "09:40"),
-            PeriodTime(3, "10:00", "10:45"),
-            PeriodTime(4, "10:55", "11:40"),
-            PeriodTime(5, "14:00", "14:45"),
-            PeriodTime(6, "14:55", "15:40"),
-            PeriodTime(7, "16:00", "16:45"),
-            PeriodTime(8, "16:55", "17:40"),
-            PeriodTime(9, "19:00", "19:45"),
-            PeriodTime(10, "19:55", "20:40"),
-            PeriodTime(11, "20:50", "21:35"),
-            PeriodTime(12, "21:45", "22:30")
-        )
+        return cn.scvtc.campus.core.SchoolBellTimes.periods.map { PeriodTime(it.number, it.start, it.end) }
     }
     
     // ============ 自定义课程 ============

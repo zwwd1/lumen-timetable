@@ -3,6 +3,11 @@ package com.tyust.course.schedule
 import android.content.SharedPreferences
 import org.json.JSONObject
 
+internal fun ScheduleTimeBase.withPeriodDefaults(periods: List<com.tyust.course.manager.ScheduleSettingsManager.PeriodTime>) = copy(
+    periodStarts = periods.associate { it.period to it.startTime } + periodStarts.filterValues { it.isNotBlank() },
+    periodEnds = periods.associate { it.period to it.endTime } + periodEnds.filterValues { it.isNotBlank() }
+)
+
 internal class ScheduleCalendarStore(private val preferences: SharedPreferences) {
     private fun normalized(value: ScheduleTimeBase): ScheduleTimeBase = value.copy(
         firstWeekDate = ScheduleDates.normalizeFirstWeekDate(value.firstWeekDate) ?: value.firstWeekDate

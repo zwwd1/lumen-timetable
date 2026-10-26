@@ -454,11 +454,11 @@ fun MainScreen(fragmentActivity: FragmentActivity,showSchoolConnection:Boolean=f
         navScrollIntent.reset()
     }
 
-    LaunchedEffect(Unit) {
-        if (!isDemoMode) {
+    LaunchedEffect(foreground, isDemoMode) {
+        if (foreground && !isDemoMode) {
             withFrameNanos { }
             delay(1_000)
-            /* Personal package never installs upstream APK updates. */
+            updateState.checkForUpdate()
         }
     }
 
@@ -746,7 +746,7 @@ fun MainScreen(fragmentActivity: FragmentActivity,showSchoolConnection:Boolean=f
                 modifier = Modifier.fillMaxSize()
             )
 
-            if (!session.expired && updateState.showDialog()) {
+            if (updateState.showDialog()) {
                 UpdateDialog(onDismiss = { updateState.dismiss() })
             }
 

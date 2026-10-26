@@ -15,6 +15,11 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify signed update publication regressions
+        run: python3 -m unittest discover -s scripts/tests -p test_lumen_update_feed.py -v
       - name: Verify plugin platform consistency
         if: github.event.repository.name == 'scvtc-zhixue' || github.event.repository.name == 'lumen-timetable'
         run: python3 scripts/check_plugin_platform.py

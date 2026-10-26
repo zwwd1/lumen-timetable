@@ -182,7 +182,7 @@ object UpdateManifestVerifier {
         val url = value.toHttpUrlOrNull() ?: return false
         return url.isHttps && url.username.isEmpty() && url.password.isEmpty() && url.fragment == null &&
             url.port == 443 && url.host in setOf("dl.hidisiwa.xyz", "dl-test.hidisiwa.xyz", "github.com",
-                "raw.githubusercontent.com", "release-assets.githubusercontent.com", "gh-proxy.com", "ghproxy.net",
+                "raw.githubusercontent.com", "api.github.com", "release-assets.githubusercontent.com", "gh-proxy.com", "ghproxy.net",
                 "gitee.com", "raw.giteeusercontent.com")
     }
 

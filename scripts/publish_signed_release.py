@@ -11,6 +11,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+from lumen_update_feed import validate_release_feed, publish_feed
 
 ROOT = Path(__file__).resolve().parents[1]
 META = json.loads((ROOT / 'releases/release.json').read_text())
@@ -19,6 +20,9 @@ API = 'https://api.github.com/repos/' + REPO
 assert REPO == META['repository']
 assert re.fullmatch(r'[0-9a-f]{40}', META['sourceCommit'])
 assert re.fullmatch(r'\d+\.\d+\.\d+', META['version'])
+update_keys = json.loads((ROOT / 'app/src/main/assets/app-update-keys.json').read_text())
+update_envelope = json.loads((ROOT / 'releases/update-manifest.json').read_text())
+update_payload = validate_release_feed(update_envelope, update_keys, META)
 HEADERS = {'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2026-03-10'}
 
 def request(url, data=None, mime='application/json', method=None):
@@ -100,4 +104,7 @@ for filename, data, mime in upload_files:
     assert result['size'] == len(data) and result.get('digest') == 'sha256:' + digest(data)
 if release['draft']:
     release = request(API + '/releases/' + str(release['id']), json.dumps({'draft': False, 'make_latest': 'true'}).encode(), method='PATCH')
+assert not release['draft'] and not release['prerelease']
+publish_feed(request, API, update_envelope, update_payload, update_keys)
 print('Published verified release: ' + release['html_url'])
+print('Verified signed app update feed: v' + update_payload['versionName'])
