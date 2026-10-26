@@ -1,0 +1,36 @@
+{
+  "repository": "zwwd1/lumen-timetable",
+  "tag": "v1.2.18",
+  "url": "https://github.com/zwwd1/lumen-timetable/releases/tag/v1.2.18",
+  "publishedAt": "2026-10-26T12:48:58Z",
+  "sourceCommit": "797fd77b5fe04d2f003200b5bd50710536544358",
+  "apk": {
+    "file": "Lumen-Timetable-1.2.18.apk",
+    "packageName": "cn.scvtc.campus.next",
+    "versionCode": 27,
+    "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
+    "size": 18481098,
+    "sha256": "0f590d4a580b42ad45c65685f712d12448e05a1091dfc7c8c79052d8b54facd4",
+    "abi": "arm64-v8a"
+  },
+  "assets": [
+    {
+      "name": "BUILD_PROVENANCE.json",
+      "size": 4413,
+      "digest": "sha256:dd260ae61b530aa673c092d9e56807c100352923490ce666e964fbea49784c91",
+      "url": "https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.18/BUILD_PROVENANCE.json"
+    },
+    {
+      "name": "Lumen-Timetable-1.2.18.apk",
+      "size": 18481098,
+      "digest": "sha256:0f590d4a580b42ad45c65685f712d12448e05a1091dfc7c8c79052d8b54facd4",
+      "url": "https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.18/Lumen-Timetable-1.2.18.apk"
+    },
+    {
+      "name": "Lumen-Timetable-1.2.18.apk.sha256",
+      "size": 93,
+      "digest": "sha256:c3d7266d8abad6003194fdb2f0de648f6e4d7acc1905970c5f53728e00611f27",
+      "url": "https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.18/Lumen-Timetable-1.2.18.apk.sha256"
+    }
+  ]
+}
