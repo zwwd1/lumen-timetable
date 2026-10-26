@@ -20,6 +20,7 @@
     "status": "passed",
     "deviceLog": "check=UP_TO_DATE current=27 remote=27 sources=2 failures=1",
     "deviceLogTime": "2026-10-26 20:57:16.861",
+    "naturalForegroundCheck": "At 21:12:47.546, after more than 15 minutes since the previous successful check, bringing the app to foreground without tapping check starts a new successful check: current=27 remote=27 sources=3 failures=0.",
     "publicSignature": "verified against the bundled lumen-update-20261026 key",
     "publicApkDownload": "Full public APK downloaded; original SHA-256, size, checksum sidecar and source provenance match."
   },
