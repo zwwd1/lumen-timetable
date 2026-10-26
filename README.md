@@ -3,7 +3,7 @@
 <h1>Lumen 课程表</h1>
 <p>川职课表、成绩、考试与学分查询。</p>
 
-[![下载](https://img.shields.io/badge/version-1.2.16-2788ed)](https://github.com/zwwd1/lumen-timetable/releases/tag/v1.2.16)
+[![下载](https://img.shields.io/badge/version-1.2.17-2788ed)](https://github.com/zwwd1/lumen-timetable/releases/tag/v1.2.17)
 ![Android](https://img.shields.io/badge/Android-13%2B-34a853?logo=android&logoColor=white)
 
 [简体中文](README.md) · [English](README.en.md)
@@ -40,10 +40,10 @@ Lumen 把川职的课表、成绩、考试安排和学分信息放在同一个�
 
 | 方案 | 用途与架构 | 获取方式 |
 | :--- | :--- | :--- |
-| **campus · 日常版 1.2.16** | 川职查询与日常课表；本次发布为 **ARM64** | [下载 APK](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.16/Lumen-Timetable-1.2.16.apk) · 17.65 MiB |
+| **campus · 日常版 1.2.17** | 川职查询与日常课表；本次发布为 **ARM64** | [下载 APK](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.17/Lumen-Timetable-1.2.17.apk) · 17.62 MiB |
 | **platform · 扩展平台** | 额外包含 Gecko、ONNX 与模型，用于需要嵌入浏览器的第三方扩展 | [自行构建](#build)，本次发行未附此包 |
 
-[SHA-256 校验](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.16/Lumen-Timetable-1.2.16.apk.sha256) · [构建来源](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.16/BUILD_PROVENANCE.json) · [对应源码](https://github.com/zwwd1/lumen-timetable/tree/4eebde84a44cef042db1fa689b254061ebab6e3b) · [历史版本](https://github.com/zwwd1/lumen-timetable/releases)
+[SHA-256 校验](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.17/Lumen-Timetable-1.2.17.apk.sha256) · [构建来源](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.17/BUILD_PROVENANCE.json) · [对应源码](https://github.com/zwwd1/lumen-timetable/tree/f3ec799d94fb7cf4e320ff98137ac0978bd10992) · [历史版本](https://github.com/zwwd1/lumen-timetable/releases)
 
 日常使用选择 **campus** 即可：使用系统 WebView，保留本校课表、成绩、学分、官方认证、编辑、提醒、组件及 AI。其他设备架构需自行构建。
 
@@ -77,13 +77,15 @@ Lumen 把川职的课表、成绩、考试安排和学分信息放在同一个�
 | 学分概况与实际毕业要求 | 后台尝试更新、手动刷新 | 减少动态效果与校园助手 |
 | 课程提醒和桌面组件 | CSV / ICS / HTML 导入导出 | 自行配置的 AI 与可选 platform 扩展 |
 
-[1.2.16 更新](release-notes/v1.2.16.md)调整了多个页面的标题和滚动效果，包括登录页的键盘避让。具体改动见版本说明。
+[1.2.17 更新](release-notes/v1.2.17.md)调整了多个页面的标题和滚动效果，包括登录页的键盘避让。具体改动见版本说明。
 
 ---
 
 <a id="start"></a>
 
 ## 第一次使用
+
+首次显示六步中文指南，正文可以滚动，支持上一页、下一页与稍后再看。之后从 **设置 → 使用指南** 随时重看；已有账号可点“完成”关闭。
 
 1. 安装日常版 **campus**，按首次引导输入川职学号和学校统一认证密码。需要额外验证时，在应用的学校认证页完成。
 2. 打开底栏 **课表**，再到 **设置 → 当前课表详情设置** 核对开学日期和节次时间。
@@ -150,7 +152,7 @@ cd lumen-timetable
 
 两类构建共享学校认证与数据格式，扩展平台的专用实现和模型位于 `app/src/platform`。发布签名与配置保存在仓库外；具体要求见[构建原理](docs/SCVTC_ARCHITECTURE.md)及[平台发布约定](spec/PLUGIN-PLATFORM-RELEASE.md)。
 
-复现当前正式包时使用版本标签 `v1.2.16`，也可直接查看[发行对应源码](https://github.com/zwwd1/lumen-timetable/tree/4eebde84a44cef042db1fa689b254061ebab6e3b)。自行签名不等于原签名覆盖升级。
+复现当前正式包时使用版本标签 `v1.2.17`，也可直接查看[发行对应源码](https://github.com/zwwd1/lumen-timetable/tree/f3ec799d94fb7cf4e320ff98137ac0978bd10992)。自行签名不等于原签名覆盖升级。
 
 ---
 
@@ -163,7 +165,7 @@ cd lumen-timetable
 <details>
 <summary><strong>目前测过哪些情况？</strong></summary>
 
-1.2.16 的正式包在 Redmi K40 / Android 13 上做过覆盖升级和部分页面检查。全新安装、其他 ROM、长时间熄屏、重启后的后台任务、通知和组件更新还没有全部测过。
+1.2.17 已完成原签名 Release、14 项 APK 检查和12 项数据库 / 日期回归及 4 项 Gecko 窗口回归。本轮未安装手机，小屏与大字体、学校登录、通知、后台和流畅度仍待实机验收。历史实机结果单列于验证记录，不算本版验收。
 
 测试过程和未完成项见 [VERIFICATION.md](VERIFICATION.md)，安装包与源码的对应关系见 [BUILD_PROVENANCE.json](BUILD_PROVENANCE.json)。
 
@@ -207,7 +209,7 @@ Android、电量、网络和厂商后台限制会影响调度。已有课程可�
 | 想了解什么 | 阅读入口 |
 | :--- | :--- |
 | 登录、课表与教务操作 | [图文上手](docs/SCVTC_USAGE.md) |
-| 本版改动与历史版本 | [1.2.16 更新说明](release-notes/v1.2.16.md) · [全部发行记录](https://github.com/zwwd1/lumen-timetable/releases) |
+| 本版改动与历史版本 | [1.2.17 更新说明](release-notes/v1.2.17.md) · [全部发行记录](https://github.com/zwwd1/lumen-timetable/releases) |
 | 认证、缓存与构建 | [构建与数据流程](docs/SCVTC_ARCHITECTURE.md) |
 | campus / platform 差异与发布 | [平台发布约定](spec/PLUGIN-PLATFORM-RELEASE.md) |
 | 数据保存与实际验证 | [隐私说明](docs/SCVTC_PRIVACY.md) · [验证记录](VERIFICATION.md) |

@@ -3,7 +3,7 @@
 <h1>Lumen Timetable</h1>
 <p>Timetables, grades, exams and credits for SCVTC students.</p>
 
-[![Release](https://img.shields.io/badge/version-1.2.16-2788ed)](https://github.com/zwwd1/lumen-timetable/releases/tag/v1.2.16)
+[![Release](https://img.shields.io/badge/version-1.2.17-2788ed)](https://github.com/zwwd1/lumen-timetable/releases/tag/v1.2.17)
 ![Android](https://img.shields.io/badge/Android-13%2B-34a853?logo=android&logoColor=white)
 
 [简体中文](README.md) · [English](README.en.md)
@@ -40,10 +40,10 @@ This is an unofficial adaptation of the campus Next app, maintained by zwwd1. Co
 
 | Variant | Purpose and architecture | Get it |
 | :--- | :--- | :--- |
-| **campus · 1.2.16** | Daily school use; this release is **ARM64** | [APK](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.16/Lumen-Timetable-1.2.16.apk) · 17.65 MiB |
+| **campus · 1.2.17** | Daily school use; this release is **ARM64** | [APK](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.17/Lumen-Timetable-1.2.17.apk) · 17.62 MiB |
 | **platform** | Adds Gecko, ONNX and models for third-party extensions requiring an embedded browser | [Build from source](#build); not attached to this release |
 
-[SHA-256](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.16/Lumen-Timetable-1.2.16.apk.sha256) · [Build provenance](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.16/BUILD_PROVENANCE.json) · [Matching source](https://github.com/zwwd1/lumen-timetable/tree/4eebde84a44cef042db1fa689b254061ebab6e3b) · [Release history](https://github.com/zwwd1/lumen-timetable/releases)
+[SHA-256](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.17/Lumen-Timetable-1.2.17.apk.sha256) · [Build provenance](https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.17/BUILD_PROVENANCE.json) · [Matching source](https://github.com/zwwd1/lumen-timetable/tree/f3ec799d94fb7cf4e320ff98137ac0978bd10992) · [Release history](https://github.com/zwwd1/lumen-timetable/releases)
 
 Choose **campus** for normal use. It uses system WebView and keeps the school timetable, grades, credits, official authentication, editing, reminders, widgets and AI. Other architectures require your own build.
 
@@ -76,7 +76,7 @@ Captured on **2026-10-17, Redmi K40 / Android 13, Lumen 1.2.14**. The images do 
 | Credits and actual graduation requirements | Background attempts and manual refresh | Reduced motion and campus companion |
 | Reminders and home-screen widgets | CSV / ICS / HTML import and export | User-configured AI; optional platform extensions |
 
-[Version 1.2.16](release-notes/v1.2.16.md) restores shared scrolling glass headers to Today, credits, sync, appearance, files and login, while retaining keyboard avoidance.
+[Version 1.2.17](release-notes/v1.2.17.md) adds the six-step guide, reduces repeated sync-status reads and moves log export off the UI thread. The guide can be reopened from Settings → 使用指南.
 
 ---
 
@@ -132,7 +132,7 @@ cd lumen-timetable
 .\gradlew.bat :app:assemblePlatformRelease
 ```
 
-Use tag `v1.2.16` for the source matching this release. Platform-specific code and models are under `app/src/platform`. Original signing material is kept outside the repository. See [architecture and build](docs/SCVTC_ARCHITECTURE.md) and [platform release requirements](spec/PLUGIN-PLATFORM-RELEASE.md).
+Use tag `v1.2.17` for the source matching this release. Platform-specific code and models are under `app/src/platform`. Original signing material is kept outside the repository. See [architecture and build](docs/SCVTC_ARCHITECTURE.md) and [platform release requirements](spec/PLUGIN-PLATFORM-RELEASE.md).
 
 ---
 
@@ -142,7 +142,7 @@ Use tag `v1.2.16` for the source matching this release. Platform-specific code a
 
 This is a personal project with no fixed update schedule. Changes to the school's login or data services may temporarily break some features. If you run into a problem, open an issue with your app version, device and steps to reproduce it. You are also welcome to fork the source.
 
-The 1.2.16 release was checked against its build records and tested as an in-place upgrade on **Redmi K40 / Android 13**. Fresh installs, all ROMs, prolonged Doze/reboot scheduling, notification delivery and continuous widget updates are not comprehensively covered. See [VERIFICATION.md](VERIFICATION.md) and [BUILD_PROVENANCE.json](BUILD_PROVENANCE.json) for the recorded checks. 
+Version 1.2.17 passed the signed Release build, 14 APK checks, 12 database/date tests and 4 Gecko-window tests. This release has not been installed or tested on a phone. Earlier device results are historical.
 
 ---
 
@@ -175,7 +175,7 @@ The [documentation directory](docs/README.md) groups usage, privacy, development
 | Task | Read |
 | :--- | :--- |
 | Connect to school and use the app | [Illustrated guide](docs/SCVTC_USAGE.md) |
-| Read release changes | [1.2.16 notes](release-notes/v1.2.16.md) · [Release history](https://github.com/zwwd1/lumen-timetable/releases) |
+| Read release changes | [1.2.17 notes](release-notes/v1.2.17.md) · [Release history](https://github.com/zwwd1/lumen-timetable/releases) |
 | Understand data flow and build | [Architecture](docs/SCVTC_ARCHITECTURE.md) · [Platform release requirements](spec/PLUGIN-PLATFORM-RELEASE.md) |
 | Check privacy and acceptance | [Privacy](docs/SCVTC_PRIVACY.md) · [Verification](VERIFICATION.md) |
 | Trace upstream sources and licenses | [Original README](docs/UPSTREAM_README.md) · [Source notices](SCVTC-NOTICES.md) |
