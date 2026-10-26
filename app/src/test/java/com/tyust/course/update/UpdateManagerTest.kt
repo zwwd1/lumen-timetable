@@ -17,7 +17,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [28], application = Application::class)
+@Config(sdk = [33], application = Application::class)
 class UpdateManagerTest {
     private lateinit var app: Application
     private var manager: UpdateManager? = null
