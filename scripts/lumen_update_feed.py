@@ -1,6 +1,7 @@
 """Verify the signed app feed against the exact, immutable release artifact."""
 import base64
 import json
+import re
 from pathlib import Path
 import subprocess
 
@@ -52,10 +53,13 @@ def validate_release_feed(envelope, keys, metadata):
     if payload.get("artifacts") != [dict(abi=artifact["abi"], size=artifact["size"],
             sha256=artifact["sha256"], mirrors=payload["mirrors"])]:
         raise ValueError("Update ABI artifact does not match release")
-    if type(payload.get("revision")) is not int or payload["revision"] < 1:
+    if type(payload.get("revision")) is not int or not 1 <= payload["revision"] < 2 ** 63:
         raise ValueError("Invalid update revision")
-    if payload.get("forceUpdate") is not False or not isinstance(payload.get("releaseNotes"), str):
+    if payload.get("forceUpdate") is not False or not isinstance(payload.get("releaseNotes"), str) or not 1 <= len(payload["releaseNotes"]) <= 20000:
         raise ValueError("Invalid update display fields")
+    if not re.fullmatch(r"[0-9]{1,24}", payload.get("buildId", "")) or not re.fullmatch(
+            r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z", payload.get("publishedAt", "")):
+        raise ValueError("Invalid update build identity")
     return payload
 
 

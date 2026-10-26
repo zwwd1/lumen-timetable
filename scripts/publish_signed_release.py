@@ -38,6 +38,7 @@ def digest(data):
 artifacts = [(META['artifact'], META['parts'])] + [(entry['artifact'], entry['parts']) for entry in META.get('additionalArtifacts', [])]
 verified_files = []
 release_notes = (ROOT / 'releases' / (META['version'] + '.md')).read_text()
+assert update_payload['releaseNotes'] in release_notes, 'Update feed notes and release differ'
 for artifact, parts in artifacts:
     assert Path(artifact['file']).name == artifact['file'] and artifact['file'].endswith('.apk')
     expected = {

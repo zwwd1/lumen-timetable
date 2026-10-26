@@ -32,7 +32,8 @@ console.log(JSON.stringify({
             url="https://github.com/zwwd1/lumen-timetable/releases/download/v1.2.18/Lumen-Timetable-1.2.18.apk")]
         self.payload = dict(channel="stable", revision=200, packageName="cn.scvtc.campus.next", versionCode=27,
             versionName="1.2.18", sourceSha="b" * 40, minSdk=33, size=100, sha256="a" * 64,
-            mirrors=mirrors, forceUpdate=False, releaseNotes="更新",
+            mirrors=mirrors, forceUpdate=False, releaseNotes="更新", buildId="202610260027",
+            publishedAt="2026-10-26T09:00:00Z",
             artifacts=[dict(abi="arm64-v8a", size=100, sha256="a" * 64, mirrors=mirrors)])
 
     def signed(self, payload=None):
@@ -78,6 +79,29 @@ console.log(JSON.stringify({
     def test_duplicate_fields_rejected(self):
         with self.assertRaises(ValueError):
             feed.strict_json('{"versionCode":27,"versionCode":26}')
+
+    def test_feed_is_written_and_read_back(self):
+        new = self.signed()
+        # Sign the older feed with a separate trusted ephemeral key.
+        new_keys = dict(self.keys)
+        old = self.signed(dict(self.payload, versionCode=26, revision=199, versionName="1.2.17"))
+        old["keyId"] = "old"
+        keys = dict(new_keys, old=self.keys["test"])
+        before = dict(sha="original", content=base64.b64encode(json.dumps(old).encode()).decode())
+        after = dict(sha="new", content=base64.b64encode(json.dumps(new).encode()).decode())
+        from unittest.mock import Mock
+        request = Mock(side_effect=[before, {}, after])
+        feed.publish_feed(request, "https://api.github.com/repos/zwwd1/lumen-timetable", new, self.payload, keys)
+        call = request.call_args_list[1]
+        self.assertEqual(call.kwargs["method"], "PUT")
+        self.assertEqual(json.loads(call.args[1])["sha"], "original")
+        self.assertEqual(json.loads(base64.b64decode(json.loads(call.args[1])["content"])), new)
+
+    def test_missing_build_identity_is_rejected(self):
+        payload = dict(self.payload)
+        del payload["publishedAt"]
+        with self.assertRaises(ValueError):
+            feed.validate_release_feed(self.signed(payload), self.keys, self.meta)
 
 
 if __name__ == "__main__":
