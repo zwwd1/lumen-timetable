@@ -1,14 +1,14 @@
 {
-  "version": "1.2.17",
-  "sourceCommit": "f3ec799d94fb7cf4e320ff98137ac0978bd10992",
+  "version": "1.2.18",
+  "sourceCommit": "797fd77b5fe04d2f003200b5bd50710536544358",
   "sourceRepository": "zwwd1/lumen-timetable",
   "artifact": {
-    "file": "Lumen-Timetable-1.2.17.apk",
+    "file": "Lumen-Timetable-1.2.18.apk",
     "packageName": "cn.scvtc.campus.next",
-    "versionCode": 26,
+    "versionCode": 27,
     "certificateSha256": "f4eb44ef0231232918e6bfe2bae00506d9bb77c49b6f516869fadaf2dcff7aed",
-    "size": 18477226,
-    "sha256": "0308f60022b09f72776339b418140a1a812d23e264986049bbd9594d0003ba11",
+    "size": 18481098,
+    "sha256": "0f590d4a580b42ad45c65685f712d12448e05a1091dfc7c8c79052d8b54facd4",
     "abi": "arm64-v8a"
   },
   "releaseBuild": "passed",
@@ -30,39 +30,94 @@
     "v2Signature": true,
     "zipAlignment": true
   },
-  "mappingId": "b81ecf05990e4f4d21217611275c0941b0cc85f00283dc02e3bfd3e306f647e7",
-  "mappingSha256": "1d56c34702f700820ce1aa6ca52bb275a8f214a84af6d2acfc25558632d6de4d",
   "desktopTests": {
-    "targetedDatabaseAndSchoolDate": {
-      "tests": 12,
-      "failures": 0,
-      "errors": 0,
-      "skipped": 0
-    },
-    "geckoWindowAccess": {
-      "tests": 4,
-      "failures": 0,
-      "errors": 0,
-      "skipped": 0
-    }
+    "project": "lumen",
+    "suites": [
+      {
+        "name": "cn.scvtc.campus.core.SchoolBellTimesTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.tyust.course.update.UpdateManifestTest",
+        "tests": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.tyust.course.update.UpdateManagerTest",
+        "tests": 15,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.tyust.course.schedule.SchoolDefaultPeriodsTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.tyust.course.schedule.ScheduleCalendarRegressionTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "com.tyust.course.schedule.ScheduleDisplayStoreTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "name": "signedUpdateFeedPublication",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "command": "python -m unittest discover -s scripts/tests -p test_lumen_update_feed.py -v",
+        "sourceCommit": "e83a57b210829532c2312868840ee40b06c7bbb8"
+      }
+    ],
+    "tests": 53,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
   },
   "deviceTests": {
-    "status": "not_run_for_this_release",
-    "coverInstall": "not_run",
-    "freshInstall": "not_run",
-    "schoolAuthentication": "not_run",
-    "performance": "not_measured",
-    "limits": "首次指南、小屏大字体、真实学校登录、通知、后台自然周期、组件与日志分享均待手机验收；历史版本结果不算本版验收。"
+    "status": "passed",
+    "date": "2026-10-26",
+    "device": "Redmi K40",
+    "android": "13",
+    "version": "1.2.18",
+    "versionCode": 27,
+    "installedApkSha256": "0f590d4a580b42ad45c65685f712d12448e05a1091dfc7c8c79052d8b54facd4",
+    "installation": "Original-signature cover upgrade from 1.2.16 through the normal file-manager package installer, using its per-install authorization; firstInstallTime unchanged.",
+    "scenarios": [
+      "One saved account retained; school course synchronization succeeds and an existing course is displayed.",
+      "Timetable settings show all ten period times matching the supplied school timetable.",
+      "Schedule settings open and return normally.",
+      "Foreground automatic and manual online checks succeed: current=27 remote=25 sources=2 failures=1 before the new release is published.",
+      "Manual update dialog shows the up-to-date result rather than cached-failure text.",
+      "All six usage-guide pages open, including the normal and practical school timetable instructions.",
+      "No new native/Java crash observed in the app process during these actions."
+    ],
+    "postPublicationFeedVerification": {
+      "status": "pending",
+      "reason": "The new public release and stable feed must be published before checking remote versionCode 27."
+    },
+    "limits": [
+      "Newer-version prompt, failed-network retry and signature rejection are covered by targeted desktop regressions; these scenarios have not been forced on the phone.",
+      "Fresh installation, natural background cycles, reminder delivery and frame-rate performance are not tested.",
+      "Xiaomi USB-install switch remains blocked by temporary restriction 3-1; normal package installation succeeds."
+    ]
   },
-  "additionalArtifacts": [],
-  "pluginPlatform": {
-    "verification": "live platform snapshot via validating Node TLS",
-    "sdkVersion": "3.7.2",
-    "contractVersion": "3.7.2",
-    "ruleVersion": "2026-10-15.1",
-    "hostAssets": "all 10 runtime files match",
-    "sdkAndStarter": "hashes and contract locks match",
-    "apiStaticAndWiki": "consistent",
-    "promotionGate": "unchanged; GitHub Actions must independently pass"
-  }
+  "mappingId": "b5ad6b97605e4427c51c0017384656bb4e144fa49644ab583fe70d7f7570c98e",
+  "mappingSha256": "a3e6ae36480c5f6aef12d0a83c52b891a02a12707cc23f8d386b62782ebd76f5"
 }
