@@ -1004,6 +1004,7 @@ fun SystemDialog(
     ownerKey: String? = null,
     scrollContent: Boolean = false,
     contentPadding: androidx.compose.foundation.layout.PaddingValues? = null,
+    clipContent: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val dialogHost = LocalDialogHost.current
@@ -1018,6 +1019,7 @@ fun SystemDialog(
             title = title,
             scrollContent = scrollContent,
             contentPadding = contentPadding,
+            clipContent = clipContent,
             content = content
         )
     }
@@ -1077,6 +1079,7 @@ private fun SystemDialogContent(
     title: @Composable (() -> Unit)?,
     scrollContent: Boolean,
     contentPadding: androidx.compose.foundation.layout.PaddingValues?,
+    clipContent: Boolean,
     content: @Composable ColumnScope.() -> Unit
 ) {
     // iOS squircle：连续曲率，避免圆弧与直边交界处的折角感
@@ -1222,7 +1225,8 @@ private fun SystemDialogContent(
             androidx.compose.material3.LocalContentColor provides appearance.onSurface) {
         ProvideWallpaperAppearance(appearance) {
             Column(
-                modifier = Modifier.padding(contentPadding ?: androidx.compose.foundation.layout.PaddingValues(
+                modifier = Modifier.then(if (clipContent) Modifier.clip(dialogShape) else Modifier)
+                    .padding(contentPadding ?: androidx.compose.foundation.layout.PaddingValues(
                     horizontal = dialogHorizontalPadding,
                     vertical = dialogVerticalPadding
                 )),

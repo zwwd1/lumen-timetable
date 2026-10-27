@@ -110,8 +110,8 @@ fun SchoolGuideDeck(
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(onClick = { navigate(page - 1) }, enabled = page > 0,
-                modifier = Modifier.weight(.36f).heightIn(min = 50.dp), shape = RoundedCornerShape(16.dp)) { Text("上一步") }
+            OutlinedButton(onClick = { if (page == 0) onConnect() else navigate(page - 1) },
+                modifier = Modifier.weight(.36f).heightIn(min = 50.dp), shape = RoundedCornerShape(16.dp)) { Text(if (page == 0) "连接" else "上一步") }
             Button(onClick = { if (page == 5) onFinish() else navigate(page + 1) },
                 modifier = Modifier.weight(.64f).heightIn(min = 50.dp), shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = accent)) {
@@ -119,7 +119,7 @@ fun SchoolGuideDeck(
                 Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, Modifier.padding(start = 8.dp).size(18.dp))
             }
         }
-        Text("左右滑动切换 · 可在${settingsLabel}的使用指南中重看", Modifier.padding(top = 12.dp),
+        Text("左右翻页 · 上下滚动查看完整演示与说明", Modifier.padding(top = 12.dp),
             color = colors.onSurfaceVariant, fontSize = 11.sp, lineHeight = 16.sp)
     }
 }
@@ -138,7 +138,7 @@ private fun guideCopy(page: Int, settings: String): Triple<String, String, Strin
     4 -> Triple("把课程，安心带走", "打开下面的迁移核对清单。先看导入预览，再核对你的上课安排。",
         "${settings}里的 CSV / ICS / HTML 入口可导出课程，导入前先核对预览，导入后重新检查学期、作息与提醒。本机历史保护不等同于可迁移的完整备份，云服务目前暂停。普通导出不包含学校密码，换手机需重新登录。")
     else -> Triple("好看，也顺手", "选一种预览风格，找到舒服的节奏。你的校园，按你的习惯来。",
-        "在外观设置中调整材质与动效；滑动不顺时先尝试均衡效果。更新使用本项目原签名包直接覆盖安装。反馈时附版本、机型与步骤，并隐藏学号、密码和个人成绩。")
+        "在外观设置中调整材质与动效，滑动不顺时可先减少动态效果。更新使用本项目原签名包直接覆盖安装。反馈时附版本、机型与步骤，并隐藏学号、密码和个人成绩。")
 }
 }
 

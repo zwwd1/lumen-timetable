@@ -20,10 +20,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -127,20 +128,20 @@ fun SettingsScreen(
     )
     var showAppearanceDetails by remember { mutableStateOf(false) }
     if (showAppearanceDetails) com.tyust.course.scvtc.CampusAppearanceSettings { showAppearanceDetails = false }
-    val scrollState = rememberScrollState()
-    val headerCollapse = com.tyust.course.ui.system.rememberScrollHeaderCollapse(scrollState)
+    val scrollState = rememberLazyListState()
+    val headerCollapse = com.tyust.course.ui.system.rememberListHeaderCollapseProvider(scrollState)
     com.tyust.course.ui.system.GlassPageScaffold(
         title = "设置",
         subtitle = "账号、外观与应用偏好",
-        collapseFraction = headerCollapse,
+        collapseFractionProvider = headerCollapse,
         actions = { com.tyust.course.scvtc.CampusQuickActions() }
     ) { padding ->
         // 内容延伸到玻璃顶栏下方，滚动时从顶栏底下穿过（padding 施加在滚动内容内部）
-        Column(
+        LazyColumn(
+            state = scrollState,
             modifier = Modifier
-                .fillMaxSize().wrapContentWidth(androidx.compose.ui.Alignment.CenterHorizontally).widthIn(max = 680.dp)
-                .verticalScroll(scrollState)
-                .padding(
+                .fillMaxSize().wrapContentWidth(androidx.compose.ui.Alignment.CenterHorizontally).widthIn(max = 680.dp),
+            contentPadding = PaddingValues(
                     start = PagePadding,
                     end = PagePadding,
                     top = padding.calculateTopPadding() + 8.dp,
@@ -148,7 +149,7 @@ fun SettingsScreen(
                 ),
             verticalArrangement = Arrangement.spacedBy(SectionSpacing)
         ) {
-            SettingsHeader(
+            item(key = "account-header") { SettingsHeader(
                 name = studentName,
                 studentId = studentId,
                 school = schoolName,
@@ -159,9 +160,9 @@ fun SettingsScreen(
                 isRefreshingCookie = isRefreshingCookie,
                 onQuotaClick = onQuotaClick,
                 onRefreshCookieClick = onRefreshCookieClick
-            )
+            ) }
 
-            InsetGroupedSection(Modifier.moduleEntrance(2), header = "账号与教务") {
+            item(key = "account-actions") { InsetGroupedSection(Modifier.moduleEntrance(2), header = "账号与教务") {
                 SettingsRow(
                     icon = Icons.Outlined.School,
                     iconTint = Color(0xFF0A84FF),
@@ -188,22 +189,22 @@ fun SettingsScreen(
                     onClick = onAccountManage, showDivider = false
                 )
 
-            }
+            } }
 
-            InsetGroupedSection {
+            item(key = "session-actions") { InsetGroupedSection {
                 SettingsRow(icon = Icons.AutoMirrored.Filled.ExitToApp,
                     iconTint = SemanticDanger,
                     title = if (isDemoMode) "退出预览" else "退出登录",
                     subtitle = if (isDemoMode) "返回登录页，保留真实账号与缓存" else "结束当前登录，保留已存账号",
                     onClick = onLogout, showDivider = false)
-            }
+            } }
 
-            com.tyust.course.scvtc.NextGroup {
+            item(key = "school-tools") { com.tyust.course.scvtc.NextGroup {
                     com.tyust.course.scvtc.NextRow("教务同步与本机备份", "离线课表保护、官方认证、日期匹配") {com.tyust.course.scvtc.CampusNavigation.request.value="profile"}
                     com.tyust.course.scvtc.NextRow("当前课表详情设置", "开学日期、节次时间、显示与提醒") {com.tyust.course.scvtc.CampusNavigation.request.value="schedule-settings"}
                     com.tyust.course.scvtc.NextRow("CSV / ICS / HTML", "导入预览与导出") {com.tyust.course.scvtc.CampusNavigation.request.value="files"}
-                }
-            InsetGroupedSection(Modifier.moduleEntrance(3), header = "外观") {
+                } }
+            item(key = "appearance") { InsetGroupedSection(Modifier.moduleEntrance(3), header = "外观") {
                 SettingsRow(
                     icon = Icons.Outlined.Palette,
                     iconTint = MaterialTheme.colorScheme.primary,
@@ -252,12 +253,12 @@ fun SettingsScreen(
                         )
                     }
                 )
-            }
+            } }
 
-            InsetGroupedSection(Modifier.moduleEntrance(3), header = "智能助手") {
+            item(key = "assistant") { InsetGroupedSection(Modifier.moduleEntrance(3), header = "智能助手") {
                 SettingsRow(icon = Icons.Outlined.AutoAwesome, iconTint = Color(0xFF5AC8FA), title = "AI 助手小澄", subtitle = "学习答疑、课表上下文与加密配置", onClick = { context.startActivity(android.content.Intent(context, com.tyust.course.scvtc.CampusAiActivity::class.java)) }, showDivider = false)
-            }
-            InsetGroupedSection(Modifier.moduleEntrance(3), header = "应用与支持") {
+            } }
+            item(key = "app-support") { InsetGroupedSection(Modifier.moduleEntrance(3), header = "应用与支持") {
                 SettingsRow(
                     icon = Icons.Outlined.Info,
                     iconTint = Color(0xFF18796B),
@@ -315,9 +316,9 @@ fun SettingsScreen(
                     onClick = onCredits,
                     showDivider = false
                 )
-            }
+            } }
 
-            InsetGroupedSection(Modifier.moduleEntrance(3), header = "数据与安全") {
+            item(key = "data-actions") { InsetGroupedSection(Modifier.moduleEntrance(3), header = "数据与安全") {
                 SettingsRow(
                     icon = Icons.Outlined.Delete,
                     iconTint = Color(0xFFFF9F0A),
@@ -326,13 +327,13 @@ fun SettingsScreen(
                     onClick = onClearCache,
                     showDivider = false
                 )
-            }
+            } }
 
-            WallpaperCaption(
+            item(key = "version-caption") { WallpaperCaption(
                 text = "Lumen 课程表 · $currentVersion",
                 style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
+                modifier = Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally)
+            ) }
         }
     }
 }

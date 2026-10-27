@@ -15,9 +15,9 @@ fun SchoolUsageGuide(onDismiss: () -> Unit, onConnect: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember(context) { context.applicationContext.getSharedPreferences("school-illustrated-guide-v2", Context.MODE_PRIVATE) }
     val initialPage = remember(prefs) { prefs.getInt("page", 0).coerceIn(0, 5) }
-    val height = (LocalConfiguration.current.screenHeightDp.dp - 80.dp).coerceAtMost(650.dp).coerceAtLeast(220.dp)
+    val height = (LocalConfiguration.current.screenHeightDp.dp - 80.dp).coerceAtMost(720.dp).coerceAtLeast(220.dp)
     SystemDialog(onDismissRequest = onDismiss, useVisualEffects = false,
-        contentPadding = PaddingValues(0.dp), ownerKey = "school-illustrated-guide-v2") {
+        contentPadding = PaddingValues(0.dp), clipContent = true, ownerKey = "school-illustrated-guide-v2") {
         SchoolGuideDeck("Lumen 课程表", "设置", Modifier.fillMaxWidth().height(height), initialPage,
             reduceMotion = !android.animation.ValueAnimator.areAnimatorsEnabled() || NextAppearance.theme.reduceMotion,
             onPageChanged = { prefs.edit().putInt("page", it).apply() },

@@ -42,6 +42,16 @@ internal fun rememberScrollHeaderCollapse(state: ScrollState): Float {
     return collapse
 }
 
+@Composable
+internal fun rememberListHeaderCollapseProvider(state: LazyListState): () -> Float {
+    val travel = with(LocalDensity.current) { 96.dp.toPx() }
+    val collapse = remember(state, travel) { derivedStateOf {
+        if (state.firstVisibleItemIndex > 0) 1f
+        else (state.firstVisibleItemScrollOffset / travel).coerceIn(0f, 1f)
+    } }
+    return remember(collapse) { { collapse.value } }
+}
+
 /** Shared page shell for forms, history and standalone browser activities. */
 @Composable
 fun GlassPageScaffold(
@@ -53,10 +63,12 @@ fun GlassPageScaffold(
     bottomBar: @Composable () -> Unit = {},
     topBar: (@Composable () -> Unit)? = null,
     collapseFraction: Float? = null,
+    collapseFractionProvider: (() -> Float)? = null,
     content: @Composable (PaddingValues) -> Unit
 ) {
     val wallpaper = LocalAppBackdrop.current
-    val contentBackdrop = if (collapseFraction != null && wallpaper != null && isBackdropSupported()) rememberLayerBackdrop() else null
+    val scrollingHeader = collapseFraction != null || collapseFractionProvider != null
+    val contentBackdrop = if (scrollingHeader && wallpaper != null && isBackdropSupported()) rememberLayerBackdrop() else null
     // Capture only the scrolling body. The header consumes its sibling layer, never itself.
     val headerBackdrop = if (wallpaper != null && contentBackdrop != null)
         rememberCombinedBackdrop(wallpaper, contentBackdrop) else wallpaper
@@ -72,7 +84,7 @@ fun GlassPageScaffold(
                     if (topBar != null) topBar() else SystemTopBar(
                         title = title,
                         subtitle = subtitle,
-                        collapseFraction = collapseFraction ?: 0f,
+                        collapseFraction = collapseFractionProvider?.invoke() ?: collapseFraction ?: 0f,
                         backdrop = headerBackdrop,
                         navigationIcon = {
                             if (onBack != null) SystemIconButton(Icons.AutoMirrored.Filled.ArrowBack, "返回", onBack)
@@ -82,13 +94,13 @@ fun GlassPageScaffold(
                 }
             ) { padding ->
                 val measuredTop = padding.calculateTopPadding()
-                if (collapseFraction != null) SideEffect {
+                if (scrollingHeader) SideEffect {
                     if (measuredTop > expandedTop) expandedTop = measuredTop
                 }
                 val contentPadding = PaddingValues(
                     // Keep the expanded inset while the bar contracts; otherwise the list
                     // moves once from scrolling and again from the changing scaffold padding.
-                    top = if (collapseFraction == null) measuredTop else maxOf(measuredTop, expandedTop),
+                    top = if (!scrollingHeader) measuredTop else maxOf(measuredTop, expandedTop),
                     bottom = maxOf(padding.calculateBottomPadding(), LocalAppOverlayBottomInset.current)
                 )
                 Box(Modifier.fillMaxSize().then(if (contentBackdrop != null) Modifier.layerBackdrop(contentBackdrop) else Modifier)) {
