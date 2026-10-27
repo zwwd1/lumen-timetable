@@ -11,6 +11,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.*
@@ -20,8 +22,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -32,8 +39,10 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
 private val guideLabels = listOf("连接", "课表", "作息", "同步", "迁移", "体验")
-private val guideColors = listOf(Color(0xFF3978F6), Color(0xFF8A63DC), Color(0xFF159BA5),
-    Color(0xFF2A9E70), Color(0xFFE69938), Color(0xFF5876DC))
+private val guideColors = listOf(Color(0xFF6E91FF), Color(0xFF9A86F4), Color(0xFF46BCD4),
+    Color(0xFF66C6B0), Color(0xFFDCB477), Color(0xFF9994F5))
+private val guideLightColors = listOf(Color(0xFF315BCE), Color(0xFF7252BF), Color(0xFF007681),
+    Color(0xFF19745F), Color(0xFF8A5D16), Color(0xFF6553BD))
 
 /** Native illustrations and practice controls; examples never write academic or appearance data. */
 @Composable
@@ -53,35 +62,43 @@ fun SchoolGuideDeck(
     val progressCallback by rememberUpdatedState(onPageChanged)
     LaunchedEffect(pager.settledPage) { progressCallback(pager.settledPage) }
     val page = pager.currentPage
-    val accent = guideColors[page]
     val colors = MaterialTheme.colorScheme
+    val dark = colors.surface.luminance() < .5f
+    val accent = (if (dark) guideColors else guideLightColors)[page]
+    val admission = remember { Animatable(1f) }
+    LaunchedEffect(page, reduceMotion) {
+        admission.snapTo(if (reduceMotion) 1f else 0f)
+        if (!reduceMotion) admission.animateTo(1f, tween(1100))
+    }
     fun navigate(index: Int) { scope.launch {
         if (reduceMotion) pager.scrollToPage(index) else pager.animateScrollToPage(index)
     } }
     BackHandler(enabled = page > 0) { navigate(page - 1) }
-    Column(modifier.background(Brush.verticalGradient(listOf(colors.surface, colors.surfaceContainerLow)))
+    Column(modifier.lumenLightField(accent, dark) { admission.value }
         .padding(horizontal = 20.dp, vertical = 18.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(38.dp).background(accent.copy(alpha = .13f), RoundedCornerShape(13.dp)),
-                contentAlignment = Alignment.Center) { Icon(Icons.Outlined.School, null, tint = accent, modifier = Modifier.size(23.dp)) }
+            Box(Modifier.size(38.dp).clip(RoundedCornerShape(14.dp))
+                .background(Brush.linearGradient(listOf(accent.copy(alpha = .6f), Color(0xFF9375DD).copy(alpha = .25f))))
+                .border(.7.dp, Color.White.copy(alpha = if (dark) .35f else .7f), RoundedCornerShape(14.dp)),
+                contentAlignment = Alignment.Center) { Icon(Icons.Outlined.AutoAwesome, null, tint = colors.onSurface, modifier = Modifier.size(22.dp)) }
             Column(Modifier.weight(1f).padding(start = 10.dp)) {
                 Text(appName, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleSmall)
-                Text("校园生活，从容开始", color = colors.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+                Text("一束微光，照亮校园", color = colors.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
             }
             IconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Outlined.Close, contentDescription = "稍后再看使用指南")
             }
         }
-        Spacer(Modifier.height(17.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             guideLabels.forEachIndexed { index, label ->
-                Column(Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(10.dp))
+                val selected = index == page
+                Box(Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(16.dp))
+                    .background(if (selected) accent.copy(alpha = if (dark) .26f else .17f) else colors.surface.copy(alpha = .12f))
+                    .border(.7.dp, if (selected) accent.copy(alpha = .65f) else colors.outlineVariant.copy(alpha = .23f), RoundedCornerShape(16.dp))
                     .clickable(role = Role.Button) { navigate(index) }
                     .semantics { contentDescription = "第 ${index + 1} 步，$label${if (index == page) "，当前步骤" else ""}" }
-                    .padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(Modifier.fillMaxWidth().height(4.dp).background(
-                        if (index <= page) accent else colors.outlineVariant.copy(alpha = .45f), CircleShape))
-                    Spacer(Modifier.height(8.dp))
+                    .padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
                     Text(label, fontSize = 11.sp, fontWeight = if (index == page) FontWeight.Bold else FontWeight.Normal,
                         color = if (index == page) accent else colors.onSurfaceVariant)
                 }
@@ -89,23 +106,30 @@ fun SchoolGuideDeck(
         }
         HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth(), beyondViewportPageCount = 0) { index ->
             val (title, subtitle, detail) = guideCopy(index, settingsLabel)
+            val pageAccent = (if (dark) guideColors else guideLightColors)[index]
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 17.dp, bottom = 16.dp)) {
-                Text("0${index + 1} / 新手旅程", color = guideColors[index], fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(9.dp))
-                Text(title, fontSize = 27.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("LUMEN / 0${index + 1}", color = pageAccent, fontSize = 10.sp, letterSpacing = 2.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.weight(1f))
+                    Text("${index + 1} / 6", color = colors.onSurfaceVariant, fontSize = 11.sp)
+                }
+                if (index == 0) LumenWelcomeGlow(pageAccent, dark)
+                else Spacer(Modifier.height(11.dp))
+                Text(if (index == 0) "你好，Lumen" else title, fontSize = if (index == 0) 33.sp else 27.sp,
+                    lineHeight = 38.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(10.dp))
                 Text(subtitle, color = colors.onSurfaceVariant, fontSize = 14.sp, lineHeight = 22.sp)
                 Spacer(Modifier.height(20.dp))
-                GuideIllustration(index, guideColors[index])
+                GuideIllustration(index, pageAccent)
                 Spacer(Modifier.height(17.dp))
                 Row(verticalAlignment = Alignment.Top) {
-                    Icon(Icons.Outlined.Lightbulb, null, tint = guideColors[index], modifier = Modifier.padding(top = 3.dp).size(18.dp))
+                    Icon(Icons.Outlined.Lightbulb, null, tint = pageAccent, modifier = Modifier.padding(top = 3.dp).size(18.dp))
                     Text(detail, Modifier.padding(start = 9.dp), style = MaterialTheme.typography.bodySmall,
                         lineHeight = 21.sp, color = colors.onSurfaceVariant)
                 }
                 if (index == 0 || index == 5) TextButton(onClick = onConnect, modifier = Modifier.padding(top = 8.dp)) {
-                    Text("连接教务系统", color = guideColors[index])
-                    Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, Modifier.padding(start = 6.dp).size(16.dp), tint = guideColors[index])
+                    Text("连接教务系统", color = pageAccent)
+                    Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, Modifier.padding(start = 6.dp).size(16.dp), tint = pageAccent)
                 }
             }
         }
@@ -113,14 +137,58 @@ fun SchoolGuideDeck(
             OutlinedButton(onClick = { if (page == 0) onConnect() else navigate(page - 1) },
                 modifier = Modifier.weight(.36f).heightIn(min = 50.dp), shape = RoundedCornerShape(16.dp)) { Text(if (page == 0) "连接" else "上一步") }
             Button(onClick = { if (page == 5) onFinish() else navigate(page + 1) },
-                modifier = Modifier.weight(.64f).heightIn(min = 50.dp), shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = accent)) {
+                modifier = Modifier.weight(.64f).heightIn(min = 50.dp).clip(RoundedCornerShape(16.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFF4D8EEA), Color(0xFF7B6FDF))))
+                    .border(.8.dp, Color.White.copy(alpha = .42f), RoundedCornerShape(16.dp)), shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = Color.White)) {
                 Text(if (page == 5) "开始使用" else "下一步", fontWeight = FontWeight.SemiBold)
                 Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, Modifier.padding(start = 8.dp).size(18.dp))
             }
         }
         Text("左右翻页 · 上下滚动查看完整演示与说明", Modifier.padding(top = 12.dp),
             color = colors.onSurfaceVariant, fontSize = 11.sp, lineHeight = 16.sp)
+    }
+}
+
+/** Cached light fields and a short draw-only entrance keep the welcome sheet quiet at rest. */
+private fun Modifier.lumenLightField(accent: Color, dark: Boolean, admission: () -> Float) = drawWithCache {
+    val surface = Brush.verticalGradient(if (dark) listOf(Color(0xEE121B34), Color(0xF51B1B32), Color(0xF0141E2B))
+        else listOf(Color(0xF2F1F5FF), Color(0xF2FBF6FF), Color(0xF2ECFAFF)))
+    val cool = Brush.radialGradient(listOf(accent.copy(alpha = if (dark) .3f else .21f), Color.Transparent),
+        center = Offset(size.width * .04f, size.height * .16f), radius = size.width * .95f)
+    val warm = Brush.radialGradient(listOf(Color(0xFFAA82ED).copy(alpha = if (dark) .23f else .17f), Color.Transparent),
+        center = Offset(size.width * 1.02f, size.height * .64f), radius = size.width * .85f)
+    val rim = Brush.linearGradient(listOf(Color.White.copy(alpha = .65f), accent.copy(alpha = .13f),
+        Color.White.copy(alpha = .04f), Color.White.copy(alpha = .3f)))
+    val line = .8.dp.toPx()
+    onDrawBehind {
+        drawRect(surface)
+        drawRect(cool, alpha = .65f + .35f * admission())
+        drawRect(warm)
+        drawRoundRect(rim, cornerRadius = CornerRadius(30.dp.toPx()), style = Stroke(line))
+        drawLine(Brush.horizontalGradient(listOf(Color.Transparent, Color.White.copy(alpha = .65f), Color.Transparent)),
+            Offset(size.width * .16f, line), Offset(size.width * .75f, line), strokeWidth = line)
+    }
+}
+
+@Composable
+private fun LumenWelcomeGlow(accent: Color, dark: Boolean) {
+    Box(Modifier.fillMaxWidth().height(116.dp).drawWithCache {
+        val halo = Brush.radialGradient(listOf(accent.copy(alpha = if (dark) .44f else .28f), Color.Transparent),
+            center = Offset(size.width / 2f, size.height / 2f), radius = size.height * .62f)
+        onDrawBehind {
+            drawRect(halo)
+            drawCircle(accent.copy(alpha = .24f), radius = 45.dp.toPx(), style = Stroke(.7.dp.toPx()))
+            drawArc(accent.copy(alpha = .65f), -60f, 115f, false,
+                topLeft = center - Offset(45.dp.toPx(), 45.dp.toPx()),
+                size = androidx.compose.ui.geometry.Size(90.dp.toPx(), 90.dp.toPx()), style = Stroke(1.6.dp.toPx()))
+        }
+    }, contentAlignment = Alignment.Center) {
+        Box(Modifier.size(69.dp).clip(RoundedCornerShape(24.dp))
+            .background(Brush.linearGradient(listOf(Color(0xFF85D7F2), Color(0xFF687FEA), Color(0xFF9977D9))))
+            .border(1.dp, Color.White.copy(alpha = .7f), RoundedCornerShape(24.dp)), contentAlignment = Alignment.Center) {
+            Text("L", fontSize = 44.sp, lineHeight = 48.sp, color = Color.White, fontWeight = FontWeight.Light)
+        }
     }
 }
 
@@ -147,7 +215,8 @@ private fun GuideIllustration(page: Int, accent: Color) {
     val colors = MaterialTheme.colorScheme
     Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(25.dp))
         .background(Brush.linearGradient(listOf(accent.copy(alpha = .13f), accent.copy(alpha = .035f))))
-        .border(1.dp, accent.copy(alpha = .14f), RoundedCornerShape(25.dp)).padding(16.dp),
+        .border(.9.dp, Brush.linearGradient(listOf(Color.White.copy(alpha = .4f), accent.copy(alpha = .18f),
+            Color.Transparent, accent.copy(alpha = .3f))), RoundedCornerShape(25.dp)).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Outlined.TouchApp, null, tint = accent, modifier = Modifier.size(15.dp))
@@ -169,11 +238,15 @@ private fun GuideIllustration(page: Int, accent: Color) {
 @Composable
 private fun ExampleCard(icon: ImageVector, title: String, subtitle: String, accent: Color,
     onClick: (() -> Unit)? = null, trailing: @Composable (() -> Unit)? = null) {
-    Surface(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(17.dp))
+    val cardShape = RoundedCornerShape(21.dp)
+    Surface(modifier = Modifier.fillMaxWidth().clip(cardShape)
+        .border(.7.dp, Brush.linearGradient(listOf(Color.White.copy(alpha = .25f), accent.copy(alpha = .05f),
+            Color.White.copy(alpha = .09f))), cardShape)
         .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
-        color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(17.dp)) {
+        color = MaterialTheme.colorScheme.surface.copy(alpha = .72f), shape = cardShape) {
         Row(Modifier.padding(13.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(38.dp).background(accent.copy(alpha = .11f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(38.dp).background(Brush.linearGradient(listOf(accent.copy(alpha = .28f),
+                accent.copy(alpha = .07f))), RoundedCornerShape(13.dp)), contentAlignment = Alignment.Center) {
                 Icon(icon, null, tint = accent, modifier = Modifier.size(22.dp))
             }
             Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
