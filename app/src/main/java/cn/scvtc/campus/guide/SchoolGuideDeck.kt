@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
-private val guideLabels = listOf("连接", "课表", "作息", "同步", "备份", "体验")
+private val guideLabels = listOf("连接", "课表", "作息", "同步", "迁移", "体验")
 private val guideColors = listOf(Color(0xFF3978F6), Color(0xFF8A63DC), Color(0xFF159BA5),
     Color(0xFF2A9E70), Color(0xFFE69938), Color(0xFF5876DC))
 
@@ -135,8 +135,8 @@ private fun guideCopy(page: Int, settings: String): Triple<String, String, Strin
         "$settings → $detailEntry，核对第一周周一与节次。普通教学默认十节，已有自定义保留。实训为 08:30–11:40、14:00–17:10，课间十分钟；分节以学校安排为准。确认时间后再开启真实提醒与通知权限。")
     3 -> Triple("偶尔离线，也从容", "在示例中切换联网状态。同步没完成时，已保存的课表依然陪着你。",
         "从教务同步入口查看各项结果、保存时间和错误，按需重试失败项。修改学校密码或遇到学校安全确认时重新登录；后台任务可能被系统延后，需要最新结果时手动刷新。")
-    4 -> Triple("把课表，安心带走", "打开下面的备份示例，体验“先预览，再确认”的导入过程。",
-        "${settings}里的导入、导出与备份入口支持保存和迁移。完整迁移后核对手动课程、作息与提醒；普通导出不包含学校密码。换手机需重新登录，两款应用的数据不会自动共享。")
+    4 -> Triple("把课程，安心带走", "打开下面的迁移核对清单。先看导入预览，再核对你的上课安排。",
+        "${settings}里的 CSV / ICS / HTML 入口可导出课程，导入前先核对预览，导入后重新检查学期、作息与提醒。本机历史保护不等同于可迁移的完整备份，云服务目前暂停。普通导出不包含学校密码，换手机需重新登录。")
     else -> Triple("好看，也顺手", "选一种预览风格，找到舒服的节奏。你的校园，按你的习惯来。",
         "在外观设置中调整材质与动效；滑动不顺时先尝试均衡效果。更新使用本项目原签名包直接覆盖安装。反馈时附版本、机型与步骤，并隐藏学号、密码和个人成绩。")
 }
@@ -240,16 +240,16 @@ private fun SyncIllustration(accent: Color) {
 @Composable
 private fun BackupIllustration(accent: Color) {
     var preview by rememberSaveable { mutableStateOf(false) }
-    ExampleCard(Icons.Outlined.FolderOpen, "我的课表备份", "点开查看备份预览", accent, { preview = !preview })
+    ExampleCard(Icons.Outlined.FolderOpen, "课程迁移核对清单", "点开，看看需要检查什么", accent, { preview = !preview })
     if (preview) {
-        listOf("课程与手动安排", "学期日期与作息", "提醒设置").forEach { label ->
+        listOf("课程名称、时间与地点", "学期日期与节次作息", "导入后重新核对提醒").forEach { label ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.CheckCircle, null, tint = accent, modifier = Modifier.size(17.dp))
                 Text(label, Modifier.padding(start = 8.dp), fontSize = 12.sp)
             }
         }
         Text("先核对，再确认导入", color = accent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-    } else Text("完整迁移使用备份功能，导入前先看预览", fontSize = 12.sp, lineHeight = 20.sp)
+    } else Text("课程导出不等于完整设置备份，迁移前后都要核对", fontSize = 12.sp, lineHeight = 20.sp)
 }
 
 @Composable
