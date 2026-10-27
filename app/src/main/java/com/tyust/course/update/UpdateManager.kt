@@ -146,7 +146,16 @@ class UpdateManager internal constructor(private val context: Context,
         scope.launch {
             restore.join()
             checkMutex.withLock {
-                if (checkJob?.isActive == true) { if (manual) mutable.update { it.copy(showDialog = true) }; return@withLock }
+                val previousJob = checkJob
+                if (previousJob?.isActive == true) {
+                    if (mutable.value.check == Check.CHECKING) {
+                        if (manual) mutable.update { it.copy(showDialog = true) }
+                        return@withLock
+                    }
+                    // A terminal state can be observed before the worker has returned.
+                    // Finish that worker before applying the retry interval to this request.
+                    previousJob.join()
+                }
                 val selected = channel; val now = nowMillis()
                 val lastSuccess = prefs.getLong("last-check:$selected", 0)
                 val lastAttempt = prefs.getLong("last-attempt:$selected", 0)
