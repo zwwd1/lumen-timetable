@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
@@ -81,6 +82,9 @@ fun GlassPageScaffold(
                 contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom),
                 bottomBar = bottomBar,
                 topBar = {
+                    // Keep Scaffold's measured inset stable while the visual bar contracts.
+                    // A changing inset otherwise invalidates the list body on every scroll frame.
+                    Box(if (collapseFractionProvider != null) Modifier.heightIn(min = expandedTop) else Modifier) {
                     if (topBar != null) topBar() else SystemTopBar(
                         title = title,
                         subtitle = subtitle,
@@ -91,6 +95,7 @@ fun GlassPageScaffold(
                         },
                         actions = actions
                     )
+                    }
                 }
             ) { padding ->
                 val measuredTop = padding.calculateTopPadding()
